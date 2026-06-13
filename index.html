@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAF 4.0 Maturity Assessment</title>
+<style>
+:root{
+  --ink:#0B1F3A; --ink2:#16335A; --purple:#5B2A86; --teal:#1F8A8A;
+  --bg:#EAEEF3; --panel:#FFFFFF; --line:#D7DCE3; --muted:#5A6675; --muted2:#8A93A1;
+  --r0:#C0392B; --r1:#DB7A2A; --r2:#C99413; --r3:#5FA63D; --r4:#2E7D32;
+  --sans: system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono: ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --radius:12px; --shadow:0 1px 2px rgba(11,31,58,.06),0 8px 24px rgba(11,31,58,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+::selection{background:#d8c8ea}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:40;background:var(--ink);color:#fff;display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:3px solid var(--purple)}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand .t{font-weight:700;font-size:15px;letter-spacing:.2px}
+.brand .s{font-size:11.5px;color:#aebbcd;letter-spacing:.3px;text-transform:uppercase}
+.spacer{flex:1}
+.gprog{display:flex;align-items:center;gap:10px;min-width:0}
+.gprog .bar{width:160px;height:7px;border-radius:6px;background:#1d3656;overflow:hidden}
+.gprog .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),#46c2c2);transition:width .35s ease}
+.gprog .lbl{font-size:12px;color:#cdd6e2;white-space:nowrap}
+.tools{display:flex;gap:8px}
+.btn{border:1px solid transparent;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+.btn:focus-visible{outline:3px solid #8ec7ff;outline-offset:1px}
+.btn-ghost{background:#13294a;color:#dfe7f0;border-color:#274468}
+.btn-ghost:hover{background:#1b3457}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:#1a7878}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:#4a2270}
+
+/* Layout */
+.app{display:grid;grid-template-columns:248px 1fr;align-items:start}
+.rail{position:sticky;top:60px;align-self:start;height:calc(100vh - 60px);overflow:auto;background:#fff;border-right:1px solid var(--line);padding:16px 12px}
+.rail h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted2);margin:6px 8px 10px}
+.navitem{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:9px 9px;cursor:pointer;color:var(--ink);margin-bottom:3px;transition:.12s}
+.navitem:hover{background:#f1f4f8}
+.navitem.active{background:#eef0fb;box-shadow:inset 0 0 0 1px #d9def4}
+.navitem .chip{width:30px;height:30px;flex:none;border-radius:8px;display:grid;place-items:center;font-weight:800;color:#fff;font-size:14px;background:var(--ink)}
+.navitem.active .chip{background:var(--purple)}
+.navitem.sum .chip{background:var(--teal);font-size:13px}
+.navitem .meta{min-width:0;flex:1}
+.navitem .nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navitem .pb{height:5px;border-radius:5px;background:#e6e9ef;margin-top:5px;overflow:hidden}
+.navitem .pb i{display:block;height:100%;width:0;background:var(--teal);transition:width .35s}
+.navitem .pc{font-size:11px;color:var(--muted2);margin-top:3px}
+
+.main{padding:26px clamp(18px,4vw,54px) 90px;max-width:1020px}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Objective header */
+.ohead{display:flex;gap:20px;align-items:flex-start;margin:4px 0 26px}
+.ohead .big{width:64px;height:64px;flex:none;border-radius:16px;display:grid;place-items:center;font-weight:800;font-size:30px;color:#fff;background:linear-gradient(135deg,var(--purple),var(--ink))}
+.ohead .eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--purple);font-weight:700}
+.ohead h1{margin:4px 0 8px;font-size:27px;line-height:1.15;letter-spacing:-.01em}
+.ohead p{margin:0;color:var(--muted);max-width:70ch}
+
+.principle{margin:34px 0 6px}
+.principle .lab{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.principle h2{margin:3px 0 0;font-size:19px;letter-spacing:-.01em}
+
+/* Outcome card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 20px 6px;margin:16px 0 22px}
+.card > header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;padding-bottom:12px;border-bottom:1px solid #eef1f5}
+.card > header .ref{font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink2);padding:3px 8px;border-radius:6px;letter-spacing:.02em}
+.card > header h3{margin:0;font-size:16px}
+.card > header .ocount{margin-left:auto;font-size:12px;color:var(--muted2)}
+.card > header .na-all{font-size:11.5px;padding:5px 10px;white-space:nowrap}
+
+.q{padding:16px 0;border-bottom:1px dashed #e9edf2}
+.q:last-of-type{border-bottom:0}
+.q .qtop{display:flex;gap:10px;align-items:baseline}
+.q .qref{font-family:var(--mono);font-size:11.5px;color:var(--muted2);white-space:nowrap;padding-top:2px}
+.q .qtext{font-size:14.5px;color:#162338;font-weight:500}
+.q .igp{font-size:11.5px;color:var(--muted2);margin:3px 0 0 0;font-style:italic}
+
+/* Maturity scale */
+.scalewrap{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin:12px 0 2px}
+.scale{flex:1 1 260px;display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.naseg{flex:1 1 92px;max-width:130px;position:relative;display:flex}
+.naseg input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.naseg label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;border:1.5px dashed var(--line);border-radius:9px;padding:9px 8px;cursor:pointer;background:#fbfcfd;min-height:58px;width:100%;transition:.13s}
+.naseg .num{font-weight:800;font-size:14px;color:var(--muted);letter-spacing:.02em}
+.naseg .nm{font-size:10px;line-height:1.1;color:var(--muted)}
+.naseg label:hover{border-color:#9aa4b2;background:#fff}
+.naseg input:checked + label{background:#5a6675;border-color:#5a6675;border-style:solid}
+.naseg input:checked + label .num,.naseg input:checked + label .nm{color:#fff}
+.naseg input:focus-visible + label{outline:3px solid #8ec7ff;outline-offset:1px}
+.seg{position:relative}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.seg label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
+  border:1.5px solid var(--line);border-radius:9px;padding:9px 6px;cursor:pointer;background:#fbfcfd;
+  transition:.13s;min-height:58px}
+.seg .num{font-weight:800;font-size:16px;color:var(--muted)}
+.seg .nm{font-size:10.5px;line-height:1.2;color:var(--muted);letter-spacing:.01em}
+.seg label:hover{border-color:#b9c2cf;background:#fff;transform:translateY(-1px)}
+.seg input:focus-visible + label{outline:3px solid #8ec7ff;outline-offset:1px}
+.seg.s0 input:checked + label{background:var(--r0);border-color:var(--r0)}
+.seg.s1 input:checked + label{background:var(--r1);border-color:var(--r1)}
+.seg.s2 input:checked + label{background:var(--r2);border-color:var(--r2)}
+.seg.s3 input:checked + label{background:var(--r3);border-color:var(--r3)}
+.seg.s4 input:checked + label{background:var(--r4);border-color:var(--r4)}
+.seg input:checked + label .num,.seg input:checked + label .nm{color:#fff}
+.seg,.naseg{position:relative}
+.seg label,.naseg label{position:relative}
+.seg .tip,.naseg .tip{position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%) translateY(4px);width:200px;max-width:60vw;background:var(--ink);color:#fff;font-size:11.5px;font-weight:400;line-height:1.4;text-align:left;padding:8px 10px;border-radius:8px;box-shadow:var(--shadow);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease,transform .12s ease;z-index:30}
+.seg .tip::after,.naseg .tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
+.seg label:hover .tip,.naseg label:hover .tip,
+.seg input:focus-visible + label .tip,.naseg input:focus-visible + label .tip{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+@media (max-width:860px){.seg .tip,.naseg .tip{display:none}}
+
+.q.a0{border-left-color:var(--r0)} .q.a1{border-left-color:var(--r1)} .q.a2{border-left-color:var(--r2)} .q.a3{border-left-color:var(--r3)} .q.a4{border-left-color:var(--r4)}
+.q.na{padding-left:12px;border-left:3px solid #9aa4b2;margin-left:-12px}
+.q.na .scale{opacity:.4}
+
+/* Evidence */
+.evid{margin:14px 0 18px;background:#f7f9fb;border:1px solid #e7ecf1;border-radius:10px;padding:12px 13px}
+.evid label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:7px}
+.evid label span{font-weight:400;color:var(--muted2)}
+.evid textarea{width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;color:var(--ink);background:#fff}
+.evid textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(31,138,138,.15)}
+
+/* Pager */
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:30px}
+.pager button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 16px;font-weight:600;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.pager button:hover:not(:disabled){border-color:#b9c2cf}
+.pager button:disabled{opacity:.4;cursor:default}
+
+/* Summary */
+.sumhead{margin:4px 0 22px}
+.sumhead .eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--purple);font-weight:700}
+.sumhead h1{margin:5px 0 6px;font-size:27px;letter-spacing:-.01em}
+.sumhead p{margin:0;color:var(--muted)}
+.overall{display:flex;gap:18px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:26px}
+.kpi{flex:1;min-width:150px}
+.kpi .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);font-weight:700}
+.kpi .v{font-size:30px;font-weight:800;margin-top:4px;letter-spacing:-.01em}
+.pill{display:inline-block;padding:5px 12px;border-radius:999px;color:#fff;font-weight:700;font-size:13px}
+.b0{background:var(--r0)} .b1{background:var(--r1)} .b2{background:var(--r2)} .b3{background:var(--r3)} .b4{background:var(--r4)} .bn{background:#9aa4b2}
+
+.sumtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:10px 0 26px}
+.sumtable caption{caption-side:top;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--teal);font-weight:700;padding:0 0 8px}
+.sumtable th,.sumtable td{padding:10px 14px;text-align:left;border-bottom:1px solid #eef1f5;font-size:13.5px}
+.sumtable thead th{background:var(--ink);color:#fff;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+.sumtable tbody tr:last-child td{border-bottom:0}
+.sumtable td.r{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.sumtable td.num{text-align:center;font-weight:700;width:70px}
+.sumtable td.cnt{text-align:center;color:var(--muted);width:120px}
+.barwrap{display:inline-flex;align-items:center;gap:8px}
+.minibar{width:90px;height:8px;border-radius:5px;background:#eceff3;overflow:hidden}
+.minibar i{display:block;height:100%}
+
+.hint{font-size:12.5px;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:10px;padding:11px 13px;margin:18px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.25s;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Guidance */
+.navitem.gd .chip{background:#34537a}
+.raillabel{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted2);font-weight:700;margin:12px 8px 6px}
+.guide{max-width:80ch}
+.guide h2{font-size:18px;margin:30px 0 8px;letter-spacing:-.01em}
+.guide h2 .eb{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--teal);font-weight:700;margin-bottom:2px}
+.guide p{color:#27364a;margin:0 0 12px}
+.guide ol{margin:0 0 14px;padding-left:20px;color:#27364a}
+.guide ol li{margin:0 0 9px;padding-left:4px}
+.guide .callout{border-left:4px solid var(--purple);background:#f6f1fb;border-radius:0 10px 10px 0;padding:14px 16px;margin:10px 0 18px;color:#2a2140}
+.guide .callout strong{color:var(--purple)}
+.guide .foot{font-size:12.5px;color:var(--muted)}
+.scaletable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:10px 0 8px}
+.scaletable th,.scaletable td{padding:11px 14px;text-align:left;border-bottom:1px solid #eef1f5;font-size:13.5px;vertical-align:top}
+.scaletable thead th{background:var(--ink);color:#fff;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+.scaletable tbody tr:last-child td{border-bottom:0}
+.scaletable .sw{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;color:#fff;font-weight:800;font-size:13px}
+.scaletable td.lv{font-weight:700;white-space:nowrap}
+.guide .chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.guide .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 14px;box-shadow:var(--shadow)}
+.guide .stat b{display:block;font-size:20px;color:var(--ink);line-height:1}
+.guide .stat span{font-size:11.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;display:flex;gap:8px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px}
+  .rail h2{display:none}
+  .navitem{flex:0 0 auto;width:auto;margin:0}
+  .navitem .pb,.navitem .pc{display:none}
+  .gprog .bar{width:90px}
+  .brand .s{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<script id="caf-data" type="application/json">
+{
+  "meta": {
+    "version": "1.3.0",
+    "comment": "Simplified metadata to a version and this comment only. Flattened the structure into a single list of questions, each now carrying its objective, principle and contributing outcome. Removed the cafBands field. The maturity scale and roll-up are retained."
+  },
+  "maturityScale": {
+    "levels": [
+      {
+        "score": 0,
+        "level": "Not Achieved",
+        "description": "Capability is absent, or only ad-hoc / informal. One or more CAF 'Not Achieved' indicators apply.",
+        "cafBand": "Not Achieved (RED)"
+      },
+      {
+        "score": 1,
+        "level": "Initial",
+        "description": "Some relevant activity exists but it is isolated, inconsistent or not yet delivering reliable benefit. Below the amber threshold.",
+        "cafBand": "Approaching Partially Achieved"
+      },
+      {
+        "score": 2,
+        "level": "Partially Achieved",
+        "description": "Delivers specific, worthwhile security benefit and meets the intent of the CAF amber indicators (or a meaningful transitional state where no amber band exists).",
+        "cafBand": "Partially Achieved (AMBER)"
+      },
+      {
+        "score": 3,
+        "level": "Largely Achieved",
+        "description": "Meets most of the CAF 'Achieved' indicators, embedded and repeatable, with minor gaps remaining.",
+        "cafBand": "Approaching Achieved"
+      },
+      {
+        "score": 4,
+        "level": "Fully Achieved",
+        "description": "Meets all relevant CAF 'Achieved' indicators; embedded, measured and continually improved.",
+        "cafBand": "Achieved (GREEN)"
+      }
+    ],
+    "rollup": {
+      "rule": "Outcome/principle/objective score = average of the question scores beneath it (only answered questions count).",
+      "bands": [
+        {
+          "band": "Not Achieved",
+          "minInclusive": 0.0,
+          "maxExclusive": 0.75
+        },
+        {
+          "band": "Initial",
+          "minInclusive": 0.75,
+          "maxExclusive": 1.75
+        },
+        {
+          "band": "Partially Achieved",
+          "minInclusive": 1.75,
+          "maxExclusive": 2.5
+        },
+        {
+          "band": "Largely Achieved",
+          "minInclusive": 2.5,
+          "maxExclusive": 3.5
+        },
+        {
+          "band": "Fully Achieved",
+          "minInclusive": 3.5,
+          "maxExclusive": null
+        }
+      ]
+    }
+  },
+  "questions": [
+    {
+      "ref": "A1.a.1",
+      "id": "CAF4.0-A1.a.1",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.a Board Direction",
+      "question": "Your organisation's approach and policy for the security of network and information systems is owned and managed at board level, and communicated meaningfully to risk-management decision-makers across the organisation.",
+      "igpTheme": "Board ownership of network and information systems security policy"
+    },
+    {
+      "ref": "A1.a.2",
+      "id": "CAF4.0-A1.a.2",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.a Board Direction",
+      "question": "Regular board-level discussions on the security of network and information systems take place, based on timely, accurate information and informed by expert guidance.",
+      "igpTheme": "Regular informed board discussion"
+    },
+    {
+      "ref": "A1.a.3",
+      "id": "CAF4.0-A1.a.3",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.a Board Direction",
+      "question": "There is a single board-level individual with overall accountability for the security of network and information systems who drives regular board discussion.",
+      "igpTheme": "Board-level accountability"
+    },
+    {
+      "ref": "A1.a.4",
+      "id": "CAF4.0-A1.a.4",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.a Board Direction",
+      "question": "Board direction is translated into effective organisational practices that direct and control the security of network and information systems.",
+      "igpTheme": "Direction translated into practice"
+    },
+    {
+      "ref": "A1.a.5",
+      "id": "CAF4.0-A1.a.5",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.a Board Direction",
+      "question": "The board has the information and understanding needed to discuss how security/resilience contributes to delivery of the essential function(s) and the impact of compromise, with security recognised as an enabler.",
+      "igpTheme": "Board understanding & security as enabler"
+    },
+    {
+      "ref": "A1.b.1",
+      "id": "CAF4.0-A1.b.1",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.b Roles & Responsibilities",
+      "question": "Key roles and responsibilities for the security of network and information systems have been identified and are reviewed regularly to remain fit for purpose.",
+      "igpTheme": "Roles identified & reviewed"
+    },
+    {
+      "ref": "A1.b.2",
+      "id": "CAF4.0-A1.b.2",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.b Roles & Responsibilities",
+      "question": "These roles are filled by appropriately capable, knowledgeable staff given the time, authority and resources to carry out their duties.",
+      "igpTheme": "Capable, resourced role-holders"
+    },
+    {
+      "ref": "A1.b.3",
+      "id": "CAF4.0-A1.b.3",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.b Roles & Responsibilities",
+      "question": "There is clarity over who holds overall accountability for the security of network and information systems, with clear channels for communicating and escalating risk.",
+      "igpTheme": "Clear accountability & escalation channels"
+    },
+    {
+      "ref": "A1.c.1",
+      "id": "CAF4.0-A1.c.1",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.c Decision-making",
+      "question": "Senior management has visibility of key risk decisions made throughout the organisation.",
+      "igpTheme": "Senior visibility of risk decisions"
+    },
+    {
+      "ref": "A1.c.2",
+      "id": "CAF4.0-A1.c.2",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.c Decision-making",
+      "question": "Risk decision-makers understand their responsibility to make effective, timely decisions within the risk appetite set by senior management.",
+      "igpTheme": "Decision-making within defined risk appetite"
+    },
+    {
+      "ref": "A1.c.3",
+      "id": "CAF4.0-A1.c.3",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.c Decision-making",
+      "question": "Risk decision-making is appropriately delegated and escalated to people with the skills, knowledge, tools and authority they need.",
+      "igpTheme": "Effective delegation & escalation"
+    },
+    {
+      "ref": "A1.c.4",
+      "id": "CAF4.0-A1.c.4",
+      "objective": "A - Managing security risk",
+      "principle": "A1 Governance",
+      "contributingOutcome": "A1.c Decision-making",
+      "question": "Risk-management decisions are regularly reviewed for continued relevance and validity, and avoid being made in isolation.",
+      "igpTheme": "Regular review; decisions not made in isolation"
+    },
+    {
+      "ref": "A2.a.1",
+      "id": "CAF4.0-A2.a.1",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Your organisational process ensures that security risks to network and information systems are identified, analysed, prioritised and managed.",
+      "igpTheme": "Defined risk management process"
+    },
+    {
+      "ref": "A2.a.2",
+      "id": "CAF4.0-A2.a.2",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Your approach to risk is focused on adverse impact to the essential function(s), with a detailed understanding of how impact arises from threat actor actions and the security properties of network and information systems.",
+      "igpTheme": "Impact-focused risk approach"
+    },
+    {
+      "ref": "A2.a.3",
+      "id": "CAF4.0-A2.a.3",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Risk assessments are based on a clearly understood, up-to-date set of threat assumptions informed by threats to your network and information systems, sector and wider national infrastructure.",
+      "igpTheme": "Clear, current threat assumptions"
+    },
+    {
+      "ref": "A2.a.4",
+      "id": "CAF4.0-A2.a.4",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Risk assessments are informed by an understanding of the vulnerabilities in network and information systems.",
+      "igpTheme": "Vulnerability-informed assessment"
+    },
+    {
+      "ref": "A2.a.5",
+      "id": "CAF4.0-A2.a.5",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "The process produces a clear set of traceable and prioritised security requirements aligned to your organisational security approach.",
+      "igpTheme": "Traceable, prioritised security requirements"
+    },
+    {
+      "ref": "A2.a.6",
+      "id": "CAF4.0-A2.a.6",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Significant conclusions from the risk-management process are communicated to key security decision-makers and accountable individuals.",
+      "igpTheme": "Communication of conclusions"
+    },
+    {
+      "ref": "A2.a.7",
+      "id": "CAF4.0-A2.a.7",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "Risk assessments are dynamic and readily updated for relevant changes (technical change, change of use, new/emergent tech, new threat information).",
+      "igpTheme": "Dynamic, change-driven assessments"
+    },
+    {
+      "ref": "A2.a.8",
+      "id": "CAF4.0-A2.a.8",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.a Risk Management Process",
+      "question": "The effectiveness of the risk-management process is reviewed regularly with improvements made, and technological developments that could adversely impact network and information systems are anticipated.",
+      "igpTheme": "Process review & horizon-scanning"
+    },
+    {
+      "ref": "A2.b.1",
+      "id": "CAF4.0-A2.b.1",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "You can perform detailed threat analysis and understand how it applies to network and information systems in the context of your sector and wider national infrastructure.",
+      "igpTheme": "Detailed, sector-contextual threat analysis"
+    },
+    {
+      "ref": "A2.b.2",
+      "id": "CAF4.0-A2.b.2",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "Your understanding of threat includes the methods/techniques of capable, well-resourced threat actors and how they could be used systematically against your network and information systems.",
+      "igpTheme": "Capable threat actor methods understood"
+    },
+    {
+      "ref": "A2.b.3",
+      "id": "CAF4.0-A2.b.3",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "You use appropriate techniques to view your network and information systems from a threat actor's perspective, anticipating probable attack methods, targets and objectives, and developing plausible scenarios.",
+      "igpTheme": "Attacker's-perspective scenario development"
+    },
+    {
+      "ref": "A2.b.4",
+      "id": "CAF4.0-A2.b.4",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "You understand the steps a capable threat actor would take to reach probable targets, and identify/justify measures at each step to reduce likelihood of success.",
+      "igpTheme": "Attack-path step analysis & mitigations"
+    },
+    {
+      "ref": "A2.b.5",
+      "id": "CAF4.0-A2.b.5",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "You maintain a detailed, current understanding of threats (e.g. threat intelligence and proactive research) and apply it to risk decision-making.",
+      "igpTheme": "Current threat understanding applied to decisions"
+    },
+    {
+      "ref": "A2.b.6",
+      "id": "CAF4.0-A2.b.6",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.b Understanding Threat",
+      "question": "You have documented the steps required to undertake detailed threat analysis.",
+      "igpTheme": "Documented threat analysis method"
+    },
+    {
+      "ref": "A2.c.1",
+      "id": "CAF4.0-A2.c.1",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.c Assurance",
+      "question": "You validate that security measures protecting network and information systems are effective and remain effective for their required lifetime.",
+      "igpTheme": "Validation of measure effectiveness over time"
+    },
+    {
+      "ref": "A2.c.2",
+      "id": "CAF4.0-A2.c.2",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.c Assurance",
+      "question": "You understand the assurance methods available and choose appropriate ones, rather than relying on 'silver bullets' or vendor claims at face value.",
+      "igpTheme": "Informed choice of assurance methods"
+    },
+    {
+      "ref": "A2.c.3",
+      "id": "CAF4.0-A2.c.3",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.c Assurance",
+      "question": "Your confidence in security across technology, people and processes can be justified to, and verified by, a third party.",
+      "igpTheme": "Third-party verifiable assurance"
+    },
+    {
+      "ref": "A2.c.4",
+      "id": "CAF4.0-A2.c.4",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.c Assurance",
+      "question": "Security deficiencies uncovered by assurance activities are assessed, prioritised and remedied in a timely, effective way.",
+      "igpTheme": "Remediation of assurance findings"
+    },
+    {
+      "ref": "A2.c.5",
+      "id": "CAF4.0-A2.c.5",
+      "objective": "A - Managing security risk",
+      "principle": "A2 Risk Management",
+      "contributingOutcome": "A2.c Assurance",
+      "question": "The assurance methods themselves are reviewed to ensure they remain appropriate and are working as intended.",
+      "igpTheme": "Review of assurance methods"
+    },
+    {
+      "ref": "A3.a.1",
+      "id": "CAF4.0-A3.a.1",
+      "objective": "A - Managing security risk",
+      "principle": "A3 Asset Management",
+      "contributingOutcome": "A3.a Asset Management",
+      "question": "All assets relevant to the secure operation of network and information systems are identified and inventoried at a suitable level of detail, and kept up to date.",
+      "igpTheme": "Complete, current asset inventory"
+    },
+    {
+      "ref": "A3.a.2",
+      "id": "CAF4.0-A3.a.2",
+      "objective": "A - Managing security risk",
+      "principle": "A3 Asset Management",
+      "contributingOutcome": "A3.a Asset Management",
+      "question": "Dependencies on supporting infrastructure (e.g. power, cooling) and between assets (e.g. IT/OT) are recognised and recorded.",
+      "igpTheme": "Dependencies recorded"
+    },
+    {
+      "ref": "A3.a.3",
+      "id": "CAF4.0-A3.a.3",
+      "objective": "A - Managing security risk",
+      "principle": "A3 Asset Management",
+      "contributingOutcome": "A3.a Asset Management",
+      "question": "You have prioritised assets according to their importance to operation of network and information systems.",
+      "igpTheme": "Asset prioritisation"
+    },
+    {
+      "ref": "A3.a.4",
+      "id": "CAF4.0-A3.a.4",
+      "objective": "A - Managing security risk",
+      "principle": "A3 Asset Management",
+      "contributingOutcome": "A3.a Asset Management",
+      "question": "You have assigned responsibility for managing all assets, including physical assets.",
+      "igpTheme": "Assigned asset ownership"
+    },
+    {
+      "ref": "A3.a.5",
+      "id": "CAF4.0-A3.a.5",
+      "objective": "A - Managing security risk",
+      "principle": "A3 Asset Management",
+      "contributingOutcome": "A3.a Asset Management",
+      "question": "Assets are managed with cyber security in mind throughout their lifecycle (creation to decommissioning/disposal), with succession planning for critical knowledge.",
+      "igpTheme": "Lifecycle management & knowledge succession"
+    },
+    {
+      "ref": "A4.a.1",
+      "id": "CAF4.0-A4.a.1",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "You have a deep understanding of your supply chain, including sub-contractors, and the wider risks it faces.",
+      "igpTheme": "Deep supply chain understanding"
+    },
+    {
+      "ref": "A4.a.2",
+      "id": "CAF4.0-A4.a.2",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "You consider supplier factors (ownership, nationality, partnerships, competitors, their sub-contractors, cyber approach) and feed these into risk assessment and procurement/purchasing decisions.",
+      "igpTheme": "Supplier factors in procurement lifecycle"
+    },
+    {
+      "ref": "A4.a.3",
+      "id": "CAF4.0-A4.a.3",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "Your supply-chain risk management considers risks from supply-chain subversion by capable, well-resourced threat actors.",
+      "igpTheme": "Subversion by capable actors considered"
+    },
+    {
+      "ref": "A4.a.4",
+      "id": "CAF4.0-A4.a.4",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "Critical suppliers can demonstrate appropriate and proportionate cyber security against capable, well-resourced threat actors.",
+      "igpTheme": "Critical supplier assurance"
+    },
+    {
+      "ref": "A4.a.5",
+      "id": "CAF4.0-A4.a.5",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "You have confidence that information held by suppliers and essential to network and information systems operation is appropriately protected from capable, well-resourced threat actors.",
+      "igpTheme": "Protection of supplier-held information"
+    },
+    {
+      "ref": "A4.a.6",
+      "id": "CAF4.0-A4.a.6",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "You identify relevant contracts and include appropriate security obligations, with a proactive approach to contract management.",
+      "igpTheme": "Security obligations & contract management"
+    },
+    {
+      "ref": "A4.a.7",
+      "id": "CAF4.0-A4.a.7",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "Customer/supplier responsibilities are defined in contracts, and all network connections and data sharing with third parties are managed effectively and proportionately.",
+      "igpTheme": "Defined responsibilities & managed connections"
+    },
+    {
+      "ref": "A4.a.8",
+      "id": "CAF4.0-A4.a.8",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.a Supply Chain",
+      "question": "Your and your suppliers' incident management processes provide mutual support in resolving incidents where appropriate.",
+      "igpTheme": "Mutual incident support"
+    },
+    {
+      "ref": "A4.b.1",
+      "id": "CAF4.0-A4.b.1",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "Your software supplier leverages an established secure software development framework (e.g. NIST SSDF, Microsoft SDL).",
+      "igpTheme": "Established secure development framework"
+    },
+    {
+      "ref": "A4.b.2",
+      "id": "CAF4.0-A4.b.2",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "Your software supplier can demonstrate a thorough understanding of the composition and provenance of software (including third-party components), with ongoing vulnerability monitoring across the product lifespan.",
+      "igpTheme": "Software composition, provenance & monitoring"
+    },
+    {
+      "ref": "A4.b.3",
+      "id": "CAF4.0-A4.b.3",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "You consider the security of development/test/production environments (including source code and repositories) appropriate and proportionate against capable, well-resourced threat actors.",
+      "igpTheme": "Secure development environments"
+    },
+    {
+      "ref": "A4.b.4",
+      "id": "CAF4.0-A4.b.4",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "The software development lifecycle is informed by an up-to-date understanding of threat, applying techniques such as threat modelling.",
+      "igpTheme": "Threat-informed SDLC / threat modelling"
+    },
+    {
+      "ref": "A4.b.5",
+      "id": "CAF4.0-A4.b.5",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "You have arrangements to receive timely security updates, patches and notifications via secure channels, and to be notified of significant events affecting your network and information systems.",
+      "igpTheme": "Timely updates via secure channels"
+    },
+    {
+      "ref": "A4.b.6",
+      "id": "CAF4.0-A4.b.6",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "Your software supplier has processes to identify, report and mitigate vulnerabilities, and you can attest to the authenticity and integrity of software, updates and patches.",
+      "igpTheme": "Vulnerability handling & integrity attestation"
+    },
+    {
+      "ref": "A4.b.7",
+      "id": "CAF4.0-A4.b.7",
+      "objective": "A - Managing security risk",
+      "principle": "A4 Supply Chain",
+      "contributingOutcome": "A4.b Secure Software Development & Support",
+      "question": "Where open-source software is used, appropriate and proportionate steps have been taken to establish sufficient confidence in its security, with appropriate support and maintenance arrangements.",
+      "igpTheme": "Open-source confidence & support"
+    },
+    {
+      "ref": "B1.a.1",
+      "id": "CAF4.0-B1.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.a Policy, Process & Procedure Development",
+      "question": "Your policies, processes and procedures fully document your overarching security governance and risk-management approach, technical security practice and specific regulatory compliance.",
+      "igpTheme": "Documented governance, practice & compliance"
+    },
+    {
+      "ref": "B1.a.2",
+      "id": "CAF4.0-B1.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.a Policy, Process & Procedure Development",
+      "question": "Cyber security is integrated and embedded throughout policies, processes and procedures, with KPIs reported to executive management.",
+      "igpTheme": "Embedded security & KPI reporting"
+    },
+    {
+      "ref": "B1.a.3",
+      "id": "CAF4.0-B1.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.a Policy, Process & Procedure Development",
+      "question": "Policies, processes and procedures are developed to be practical, usable and appropriate to mitigate adverse impact to network and information systems, including those relying on user behaviour.",
+      "igpTheme": "Practical, usable, behaviour-aware policies"
+    },
+    {
+      "ref": "B1.a.4",
+      "id": "CAF4.0-B1.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.a Policy, Process & Procedure Development",
+      "question": "Policies are reviewed/updated at suitably regular intervals and after major incidents, with changes to the essential function(s) or threat triggering a review.",
+      "igpTheme": "Regular & event-driven review"
+    },
+    {
+      "ref": "B1.a.5",
+      "id": "CAF4.0-B1.a.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.a Policy, Process & Procedure Development",
+      "question": "Systems are designed to remain secure even when user security policies, processes and procedures are not always followed.",
+      "igpTheme": "Secure-despite-user-error design"
+    },
+    {
+      "ref": "B1.b.1",
+      "id": "CAF4.0-B1.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.b Policy, Process & Procedure Implementation",
+      "question": "All your policies, processes and procedures are followed, and their correct application and security effectiveness are evaluated.",
+      "igpTheme": "Followed & effectiveness evaluated"
+    },
+    {
+      "ref": "B1.b.2",
+      "id": "CAF4.0-B1.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.b Policy, Process & Procedure Implementation",
+      "question": "Policies are integrated with other organisational policies, including HR assessments of individuals' trustworthiness.",
+      "igpTheme": "Integration with HR/other policies"
+    },
+    {
+      "ref": "B1.b.3",
+      "id": "CAF4.0-B1.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.b Policy, Process & Procedure Implementation",
+      "question": "Policies are effectively communicated across all levels of the organisation, resulting in good staff awareness of responsibilities.",
+      "igpTheme": "Communication & staff awareness"
+    },
+    {
+      "ref": "B1.b.4",
+      "id": "CAF4.0-B1.b.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B1 Service Protection Policies, Processes & Procedures",
+      "contributingOutcome": "B1.b Policy, Process & Procedure Implementation",
+      "question": "Appropriate action is taken to address all breaches with potential to adversely impact the essential function(s), including aggregated breaches.",
+      "igpTheme": "Action on breaches incl. aggregated"
+    },
+    {
+      "ref": "B2.a.1",
+      "id": "CAF4.0-B2.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.a Identity Verification, Authentication & Authorisation",
+      "question": "Your initial identity verification is robust enough to provide a high level of confidence in a user's identity before granting access to network and information systems.",
+      "igpTheme": "Robust initial identity verification"
+    },
+    {
+      "ref": "B2.a.2",
+      "id": "CAF4.0-B2.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.a Identity Verification, Authentication & Authorisation",
+      "question": "Only authorised and individually authenticated users can physically access and logically connect to network and information systems on which the essential function(s) depend.",
+      "igpTheme": "Individual authentication for access"
+    },
+    {
+      "ref": "B2.a.3",
+      "id": "CAF4.0-B2.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.a Identity Verification, Authentication & Authorisation",
+      "question": "The number of authorised users and systems with access is limited to the minimum necessary to support the essential function(s).",
+      "igpTheme": "Least-access / minimisation"
+    },
+    {
+      "ref": "B2.a.4",
+      "id": "CAF4.0-B2.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.a Identity Verification, Authentication & Authorisation",
+      "question": "You use strong authentication (e.g. MFA) for all user access, including remote access, to all network and information systems that operate or support the essential function(s).",
+      "igpTheme": "MFA for all access incl. remote"
+    },
+    {
+      "ref": "B2.a.5",
+      "id": "CAF4.0-B2.a.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.a Identity Verification, Authentication & Authorisation",
+      "question": "The list of users and systems with access is reviewed regularly (at least every six months), and your authentication approach follows up-to-date best practice.",
+      "igpTheme": "Regular access review & current best practice"
+    },
+    {
+      "ref": "B2.b.1",
+      "id": "CAF4.0-B2.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.b Device Management",
+      "question": "Only corporately owned and managed devices can access network and information systems supporting the essential function(s).",
+      "igpTheme": "Corporately managed devices only"
+    },
+    {
+      "ref": "B2.b.2",
+      "id": "CAF4.0-B2.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.b Device Management",
+      "question": "All privileged operations are conducted from highly trusted devices (e.g. Privileged Access Workstations) dedicated solely to those operations.",
+      "igpTheme": "PAWs for privileged operations"
+    },
+    {
+      "ref": "B2.b.3",
+      "id": "CAF4.0-B2.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.b Device Management",
+      "question": "You obtain independent/professional assurance of third-party devices/networks before connection, or only allow dedicated third-party devices/networks.",
+      "igpTheme": "Assurance of third-party connections"
+    },
+    {
+      "ref": "B2.b.4",
+      "id": "CAF4.0-B2.b.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.b Device Management",
+      "question": "Connecting to a network port or cable does not grant access without device/user authentication.",
+      "igpTheme": "No access on physical connection alone"
+    },
+    {
+      "ref": "B2.b.5",
+      "id": "CAF4.0-B2.b.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.b Device Management",
+      "question": "You perform certificate-based device identity management, only allow known devices, and run regular scans to detect/investigate unknown devices.",
+      "igpTheme": "Certificate-based device identity & scanning"
+    },
+    {
+      "ref": "B2.c.1",
+      "id": "CAF4.0-B2.c.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "All privileged user access requires strong authentication, such as MFA.",
+      "igpTheme": "Strong auth for privileged access"
+    },
+    {
+      "ref": "B2.c.2",
+      "id": "CAF4.0-B2.c.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "The identities of individuals with privileged access (including third parties) are known and managed.",
+      "igpTheme": "Known & managed privileged identities"
+    },
+    {
+      "ref": "B2.c.3",
+      "id": "CAF4.0-B2.c.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "Privileged access is carried out from dedicated separate accounts that are closely monitored and managed, with logical separation of roles (e.g. corporate email vs privileged actions).",
+      "igpTheme": "Dedicated accounts & role separation"
+    },
+    {
+      "ref": "B2.c.4",
+      "id": "CAF4.0-B2.c.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "Privileged users are granted only the specific rights essential to their role, with temporary, time-bound rights for privileged/third-party support access.",
+      "igpTheme": "Least privilege & time-bound rights"
+    },
+    {
+      "ref": "B2.c.5",
+      "id": "CAF4.0-B2.c.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "Privileged access rights are regularly reviewed and updated as part of your joiners/movers/leavers process.",
+      "igpTheme": "JML-driven privilege review"
+    },
+    {
+      "ref": "B2.c.6",
+      "id": "CAF4.0-B2.c.6",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.c Privileged User Management",
+      "question": "All privileged user activity is routinely reviewed, validated and recorded for offline analysis and investigation.",
+      "igpTheme": "Recorded & reviewed privileged activity"
+    },
+    {
+      "ref": "B2.d.1",
+      "id": "CAF4.0-B2.d.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.d Identity & Access Management (IdAM)",
+      "question": "You follow a robust, regularly audited procedure to verify each user and issue the minimum required access rights.",
+      "igpTheme": "Audited least-privilege provisioning"
+    },
+    {
+      "ref": "B2.d.2",
+      "id": "CAF4.0-B2.d.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.d Identity & Access Management (IdAM)",
+      "question": "User access rights are reviewed both when people change roles (via JML) and at regular intervals (at least annually).",
+      "igpTheme": "JML & periodic access review"
+    },
+    {
+      "ref": "B2.d.3",
+      "id": "CAF4.0-B2.d.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.d Identity & Access Management (IdAM)",
+      "question": "All user, device and system access to network and information systems is logged and monitored.",
+      "igpTheme": "Access logging & monitoring"
+    },
+    {
+      "ref": "B2.d.4",
+      "id": "CAF4.0-B2.d.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.d Identity & Access Management (IdAM)",
+      "question": "You regularly review access logs and correlate them with other access records and expected activity.",
+      "igpTheme": "Log correlation"
+    },
+    {
+      "ref": "B2.d.5",
+      "id": "CAF4.0-B2.d.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B2 Identity & Access Control",
+      "contributingOutcome": "B2.d Identity & Access Management (IdAM)",
+      "question": "Attempts by unauthorised users/devices/systems to connect are alerted, promptly assessed and investigated.",
+      "igpTheme": "Alerting on unauthorised attempts"
+    },
+    {
+      "ref": "B3.a.1",
+      "id": "CAF4.0-B3.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You have identified and catalogued all data important to network and information systems operation, or that would assist a threat actor.",
+      "igpTheme": "Catalogue of important data"
+    },
+    {
+      "ref": "B3.a.2",
+      "id": "CAF4.0-B3.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You have identified and catalogued who has access to that important data.",
+      "igpTheme": "Access mapping to data"
+    },
+    {
+      "ref": "B3.a.3",
+      "id": "CAF4.0-B3.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You maintain a current understanding of the location, quantity and quality of important data, removing/minimising unnecessary copies or historic data.",
+      "igpTheme": "Current data picture & minimisation"
+    },
+    {
+      "ref": "B3.a.4",
+      "id": "CAF4.0-B3.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You have identified all mobile devices and media that may hold important data, and maintain a current understanding of the data links used to transmit it.",
+      "igpTheme": "Mobile/media & data-link awareness"
+    },
+    {
+      "ref": "B3.a.5",
+      "id": "CAF4.0-B3.a.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You understand the context, limitations and dependencies of your important data.",
+      "igpTheme": "Data context & dependencies"
+    },
+    {
+      "ref": "B3.a.6",
+      "id": "CAF4.0-B3.a.6",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.a Understanding Data",
+      "question": "You understand and document the impact on the essential function(s) of all relevant scenarios (unauthorised access, uncontrolled release, modification, deletion, unavailability), validating these at least annually.",
+      "igpTheme": "Documented & validated impact statements"
+    },
+    {
+      "ref": "B3.b.1",
+      "id": "CAF4.0-B3.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.b Data in Transit",
+      "question": "You have identified and protected (effectively and proportionately) all data links carrying data important to the essential function(s).",
+      "igpTheme": "Identified & protected data links"
+    },
+    {
+      "ref": "B3.b.2",
+      "id": "CAF4.0-B3.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.b Data in Transit",
+      "question": "You apply appropriate physical and/or technical means (e.g. cryptography) to protect data over non-trusted or openly accessible carriers, with justified confidence in the robustness of protection.",
+      "igpTheme": "Protected transit with justified confidence"
+    },
+    {
+      "ref": "B3.b.3",
+      "id": "CAF4.0-B3.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.b Data in Transit",
+      "question": "Suitable alternative transmission paths are available where there is significant risk of impact due to resource limitation (e.g. equipment failure, data blocked/jammed).",
+      "igpTheme": "Alternative transmission paths"
+    },
+    {
+      "ref": "B3.c.1",
+      "id": "CAF4.0-B3.c.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.c Stored Data",
+      "question": "All copies of important data are necessary, and where important data is transferred to less secure systems, it is provided with limited detail and/or as a read-only copy.",
+      "igpTheme": "Copy minimisation & controlled transfer"
+    },
+    {
+      "ref": "B3.c.2",
+      "id": "CAF4.0-B3.c.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.c Stored Data",
+      "question": "You have applied suitable physical and/or technical means to protect stored important data from unauthorised access, modification or deletion.",
+      "igpTheme": "Protection of stored data"
+    },
+    {
+      "ref": "B3.c.3",
+      "id": "CAF4.0-B3.c.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.c Stored Data",
+      "question": "Where cryptographic protections are used, suitable technical and procedural means are applied with justified confidence in the robustness of protection.",
+      "igpTheme": "Cryptographic protection with justified confidence"
+    },
+    {
+      "ref": "B3.c.4",
+      "id": "CAF4.0-B3.c.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.c Stored Data",
+      "question": "You hold suitable, secured backups (including offline/segregated or alternative forms such as paper) to allow the essential function(s) to continue if original data is unavailable.",
+      "igpTheme": "Secured, resilient backups"
+    },
+    {
+      "ref": "B3.c.5",
+      "id": "CAF4.0-B3.c.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.c Stored Data",
+      "question": "Necessary historic or archive data is suitably secured in storage.",
+      "igpTheme": "Secured archive data"
+    },
+    {
+      "ref": "B3.d.1",
+      "id": "CAF4.0-B3.d.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.d Mobile Data",
+      "question": "You know which mobile devices hold important data, and these are catalogued and under organisational control.",
+      "igpTheme": "Catalogued, controlled mobile devices"
+    },
+    {
+      "ref": "B3.d.2",
+      "id": "CAF4.0-B3.d.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.d Mobile Data",
+      "question": "Mobile devices holding important data are configured according to platform best practice, with appropriate technical and procedural policies in place.",
+      "igpTheme": "Best-practice mobile configuration"
+    },
+    {
+      "ref": "B3.d.3",
+      "id": "CAF4.0-B3.d.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.d Mobile Data",
+      "question": "Your organisation can remotely wipe all mobile devices holding important data.",
+      "igpTheme": "Remote wipe capability"
+    },
+    {
+      "ref": "B3.d.4",
+      "id": "CAF4.0-B3.d.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.d Mobile Data",
+      "question": "You have minimised important data on mobile devices (e.g. automatic deletion after a period).",
+      "igpTheme": "Mobile data minimisation"
+    },
+    {
+      "ref": "B3.e.1",
+      "id": "CAF4.0-B3.e.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.e Media / Equipment Sanitisation",
+      "question": "Important data is removed from all devices, equipment and removable media before reuse and/or disposal, using an assured product or service.",
+      "igpTheme": "Assured sanitisation before reuse/disposal"
+    },
+    {
+      "ref": "B3.e.2",
+      "id": "CAF4.0-B3.e.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B3 Data Security",
+      "contributingOutcome": "B3.e Media / Equipment Sanitisation",
+      "question": "You catalogue and track all devices that contain important data (whether dedicated storage or with integral storage).",
+      "igpTheme": "Tracking of data-bearing devices"
+    },
+    {
+      "ref": "B4.a.1",
+      "id": "CAF4.0-B4.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "You employ appropriate expertise to design network and information systems supporting the essential function(s).",
+      "igpTheme": "Appropriate design expertise"
+    },
+    {
+      "ref": "B4.a.2",
+      "id": "CAF4.0-B4.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "Network and information systems are segregated into appropriate security zones (e.g. essential-function systems in a highly trusted, more secure zone).",
+      "igpTheme": "Security zoning / segregation"
+    },
+    {
+      "ref": "B4.a.3",
+      "id": "CAF4.0-B4.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "Network and information systems are designed with simple data flows between components to support effective security monitoring.",
+      "igpTheme": "Simple data flows for monitoring"
+    },
+    {
+      "ref": "B4.a.4",
+      "id": "CAF4.0-B4.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "Network and information systems supporting the essential function(s) are designed to be easy to recover.",
+      "igpTheme": "Designed for easy recovery"
+    },
+    {
+      "ref": "B4.a.5",
+      "id": "CAF4.0-B4.a.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "Content-based attacks are mitigated for all inputs to network and information systems that affect the essential function(s) (e.g. via transformation, inspection/sanitisation and validation).",
+      "igpTheme": "Content-based attack mitigation"
+    },
+    {
+      "ref": "B4.a.6",
+      "id": "CAF4.0-B4.a.6",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.a Secure by Design",
+      "question": "Where automated decision-making technologies are in use, appropriate restrictions have been designed and applied to prevent actions that could adversely impact network and information systems.",
+      "igpTheme": "Restrictions on automated decision-making"
+    },
+    {
+      "ref": "B4.b.1",
+      "id": "CAF4.0-B4.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "You have identified, documented and actively manage (configuration, patching, updating per good practice) the assets that need careful configuration.",
+      "igpTheme": "Actively managed secure configuration"
+    },
+    {
+      "ref": "B4.b.2",
+      "id": "CAF4.0-B4.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "All platforms conform to your secure, defined baseline build or the latest known-good configuration version for that environment.",
+      "igpTheme": "Baseline / known-good builds"
+    },
+    {
+      "ref": "B4.b.3",
+      "id": "CAF4.0-B4.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "You closely and effectively manage changes, ensuring network and information systems configurations are secure and documented, and regularly review/validate expected secure settings.",
+      "igpTheme": "Change management & configuration validation"
+    },
+    {
+      "ref": "B4.b.4",
+      "id": "CAF4.0-B4.b.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "Only permitted software can be installed, and software is verified before installation.",
+      "igpTheme": "Software allow-listing & verification"
+    },
+    {
+      "ref": "B4.b.5",
+      "id": "CAF4.0-B4.b.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "Standard users are unable to change settings that would adversely impact the security of network and information systems.",
+      "igpTheme": "Restricted standard-user settings"
+    },
+    {
+      "ref": "B4.b.6",
+      "id": "CAF4.0-B4.b.6",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "Generic, shared, default-name and built-in accounts have been removed/disabled (or credentials changed where not possible), and service accounts are appropriately protected.",
+      "igpTheme": "Default/shared account hardening"
+    },
+    {
+      "ref": "B4.b.7",
+      "id": "CAF4.0-B4.b.7",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.b Secure Configuration",
+      "question": "Where automated decision-making technologies are in use, their operation is well understood and decisions can be replicated.",
+      "igpTheme": "Understandable, replicable automated decisions"
+    },
+    {
+      "ref": "B4.c.1",
+      "id": "CAF4.0-B4.c.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.c Secure Management",
+      "question": "Systems supporting the essential function(s) are only administered/maintained by authorised privileged users from highly trusted devices (e.g. PAWs) dedicated solely to those operations.",
+      "igpTheme": "Administration from highly trusted devices"
+    },
+    {
+      "ref": "B4.c.2",
+      "id": "CAF4.0-B4.c.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.c Secure Management",
+      "question": "You regularly review and update technical knowledge (documentation, network diagrams) and ensure it is securely stored.",
+      "igpTheme": "Current, securely stored documentation"
+    },
+    {
+      "ref": "B4.c.3",
+      "id": "CAF4.0-B4.c.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.c Secure Management",
+      "question": "You prevent, detect and remove malware and unauthorised software using technical, procedural and physical measures as necessary.",
+      "igpTheme": "Malware & unauthorised software control"
+    },
+    {
+      "ref": "B4.d.1",
+      "id": "CAF4.0-B4.d.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.d Vulnerability Management",
+      "question": "You maintain a current understanding of the exposure of network and information systems to publicly known vulnerabilities.",
+      "igpTheme": "Current vulnerability exposure understanding"
+    },
+    {
+      "ref": "B4.d.2",
+      "id": "CAF4.0-B4.d.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.d Vulnerability Management",
+      "question": "Announced vulnerabilities for all software packages are tracked, prioritised and mitigated (e.g. by patching) promptly.",
+      "igpTheme": "Prompt vulnerability mitigation"
+    },
+    {
+      "ref": "B4.d.3",
+      "id": "CAF4.0-B4.d.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.d Vulnerability Management",
+      "question": "You regularly test to fully understand the vulnerabilities of network and information systems and verify this understanding with third-party testing.",
+      "igpTheme": "Regular & third-party testing"
+    },
+    {
+      "ref": "B4.d.4",
+      "id": "CAF4.0-B4.d.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B4 System Security",
+      "contributingOutcome": "B4.d Vulnerability Management",
+      "question": "You actively maximise the use of supported software, firmware and hardware in network and information systems.",
+      "igpTheme": "Supported technology maximised"
+    },
+    {
+      "ref": "B5.a.1",
+      "id": "CAF4.0-B5.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.a Resilience Preparation",
+      "question": "You know all network and information systems and underlying technologies necessary to restore the essential function(s) and understand their interdependence.",
+      "igpTheme": "Knowledge of recovery components & dependencies"
+    },
+    {
+      "ref": "B5.a.2",
+      "id": "CAF4.0-B5.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.a Resilience Preparation",
+      "question": "You know the order in which systems need to be recovered to efficiently and effectively restore the essential function(s).",
+      "igpTheme": "Defined recovery order"
+    },
+    {
+      "ref": "B5.a.3",
+      "id": "CAF4.0-B5.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.a Resilience Preparation",
+      "question": "You have business continuity and disaster recovery plans tested for practicality, effectiveness and completeness using a range of methods (manual fail-over, table-top, red-teaming).",
+      "igpTheme": "Tested BC/DR plans"
+    },
+    {
+      "ref": "B5.a.4",
+      "id": "CAF4.0-B5.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.a Resilience Preparation",
+      "question": "You use security awareness and threat intelligence to identify new/heightened risk levels that trigger immediate, potentially temporary measures to enhance network and information systems security.",
+      "igpTheme": "Intelligence-driven temporary measures"
+    },
+    {
+      "ref": "B5.b.1",
+      "id": "CAF4.0-B5.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.b Design for Resilience",
+      "question": "Network and information systems supporting the essential function(s) are segregated from other business and external systems by appropriate technical and physical means (e.g. separate infrastructure with independent user administration).",
+      "igpTheme": "Technical & physical segregation"
+    },
+    {
+      "ref": "B5.b.2",
+      "id": "CAF4.0-B5.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.b Design for Resilience",
+      "question": "Internet services such as browsing and email are not accessible from network and information systems supporting the essential function(s).",
+      "igpTheme": "No internet services on network and information systems"
+    },
+    {
+      "ref": "B5.b.3",
+      "id": "CAF4.0-B5.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.b Design for Resilience",
+      "question": "You have identified and mitigated all resource limitations (e.g. bandwidth limitations, single network paths).",
+      "igpTheme": "Resource limitation mitigation"
+    },
+    {
+      "ref": "B5.b.4",
+      "id": "CAF4.0-B5.b.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.b Design for Resilience",
+      "question": "You have identified and mitigated geographical constraints/weaknesses (e.g. replication in another location, alternative physical paths and providers).",
+      "igpTheme": "Geographic resilience"
+    },
+    {
+      "ref": "B5.b.5",
+      "id": "CAF4.0-B5.b.5",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.b Design for Resilience",
+      "question": "You review and update assessments of dependencies, resource and geographical limitations and mitigations when necessary.",
+      "igpTheme": "Review of resilience assessments"
+    },
+    {
+      "ref": "B5.c.1",
+      "id": "CAF4.0-B5.c.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.c Backups",
+      "question": "Your comprehensive, automatic and tested technical and procedural backups are secured at centrally accessible or secondary sites to recover from an extreme event (including ransomware).",
+      "igpTheme": "Comprehensive, automatic, secured backups"
+    },
+    {
+      "ref": "B5.c.2",
+      "id": "CAF4.0-B5.c.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B5 Resilient Networks & Systems",
+      "contributingOutcome": "B5.c Backups",
+      "question": "Backups of all important data and information needed to recover the essential function(s) are made, tested, documented and routinely reviewed.",
+      "igpTheme": "Tested, documented, reviewed backups"
+    },
+    {
+      "ref": "B6.a.1",
+      "id": "CAF4.0-B6.a.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.a Cyber Security Culture",
+      "question": "Executive management clearly and effectively communicates cyber security priorities and objectives to all staff, displaying positive attitudes, behaviours and expectations.",
+      "igpTheme": "Executive-led positive culture"
+    },
+    {
+      "ref": "B6.a.2",
+      "id": "CAF4.0-B6.a.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.a Cyber Security Culture",
+      "question": "People raising potential cyber security incidents/issues are treated positively, with individuals at all levels routinely reporting concerns and being recognised.",
+      "igpTheme": "Positive reporting & recognition"
+    },
+    {
+      "ref": "B6.a.3",
+      "id": "CAF4.0-B6.a.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.a Cyber Security Culture",
+      "question": "Management is seen to be committed to and actively involved in cyber security, communicating openly with any concern taken seriously.",
+      "igpTheme": "Visible management commitment"
+    },
+    {
+      "ref": "B6.a.4",
+      "id": "CAF4.0-B6.a.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.a Cyber Security Culture",
+      "question": "People across the organisation collaborate in cyber security activities and improvements, building joint ownership.",
+      "igpTheme": "Collaborative joint ownership"
+    },
+    {
+      "ref": "B6.b.1",
+      "id": "CAF4.0-B6.b.1",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.b Cyber Security Training",
+      "question": "You have defined appropriate cyber security training and awareness activities for all roles, from executives to the most junior.",
+      "igpTheme": "Role-based training defined for all"
+    },
+    {
+      "ref": "B6.b.2",
+      "id": "CAF4.0-B6.b.2",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.b Cyber Security Training",
+      "question": "All people follow appropriate cyber security training paths, with each individual's training tracked and refreshed at suitable intervals.",
+      "igpTheme": "Tracked & refreshed training"
+    },
+    {
+      "ref": "B6.b.3",
+      "id": "CAF4.0-B6.b.3",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.b Cyber Security Training",
+      "question": "You use a range of teaching/communication techniques and routinely evaluate training/awareness activities to ensure they reach the widest audience and are effective.",
+      "igpTheme": "Varied methods & effectiveness evaluation"
+    },
+    {
+      "ref": "B6.b.4",
+      "id": "CAF4.0-B6.b.4",
+      "objective": "B - Protecting against cyber attack",
+      "principle": "B6 Staff Awareness & Training",
+      "contributingOutcome": "B6.b Cyber Security Training",
+      "question": "Cyber security information and good-practice guidance is easily accessible, widely available and known to be referenced and used.",
+      "igpTheme": "Accessible, used guidance"
+    },
+    {
+      "ref": "C1.a.1",
+      "id": "CAF4.0-C1.a.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Monitoring is based on a thorough understanding of your network and information systems, threat-actor techniques, and what logging/monitoring is required to detect events affecting the essential function(s).",
+      "igpTheme": "Understanding-led monitoring strategy"
+    },
+    {
+      "ref": "C1.a.2",
+      "id": "CAF4.0-C1.a.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Your monitoring data provides enough detail to promptly and reliably detect security events and incidents and support investigations, and is reviewed regularly and after significant events.",
+      "igpTheme": "Sufficient, reviewed monitoring detail"
+    },
+    {
+      "ref": "C1.a.3",
+      "id": "CAF4.0-C1.a.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Extensive monitoring of user and system activity enables you to promptly detect policy violations, suspicious/undesirable behaviour and deviations/abnormalities indicative of adverse activity.",
+      "igpTheme": "Extensive user/system activity monitoring"
+    },
+    {
+      "ref": "C1.a.4",
+      "id": "CAF4.0-C1.a.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Your logging and monitoring capability includes both host-based and network monitoring, with all new network and information systems considered as potential data sources.",
+      "igpTheme": "Host & network coverage incl. new systems"
+    },
+    {
+      "ref": "C1.a.5",
+      "id": "CAF4.0-C1.a.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Log datasets are synchronised using an accurate common time source so they can be correlated, and log data is enriched with other network and information systems data.",
+      "igpTheme": "Time-synchronised, enriched logs"
+    },
+    {
+      "ref": "C1.a.6",
+      "id": "CAF4.0-C1.a.6",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.a Sources & Tools for Logging & Monitoring",
+      "question": "Your monitoring tools make use of log data to pinpoint activity, and the data sources and tools are regularly reviewed to ensure the strategy remains effective.",
+      "igpTheme": "Effective tooling & strategy review"
+    },
+    {
+      "ref": "C1.b.1",
+      "id": "CAF4.0-C1.b.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.b Securing Logs",
+      "question": "Appropriate access to log data is limited to users and systems with a business need.",
+      "igpTheme": "Need-to-know log access"
+    },
+    {
+      "ref": "C1.b.2",
+      "id": "CAF4.0-C1.b.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.b Securing Logs",
+      "question": "The logging architecture has mechanisms, policies and procedures to protect itself from threats comparable to those it tries to identify (protecting both the function and the data).",
+      "igpTheme": "Self-protecting logging architecture"
+    },
+    {
+      "ref": "C1.b.3",
+      "id": "CAF4.0-C1.b.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.b Securing Logs",
+      "question": "Log data analysis/normalisation is performed only on copies, keeping the master copy unaltered.",
+      "igpTheme": "Unaltered master log copies"
+    },
+    {
+      "ref": "C1.b.4",
+      "id": "CAF4.0-C1.b.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.b Securing Logs",
+      "question": "All actions involving log data (copying, deleting, modification, viewing) can be traced back to a unique user or system.",
+      "igpTheme": "Attributable log access"
+    },
+    {
+      "ref": "C1.b.5",
+      "id": "CAF4.0-C1.b.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.b Securing Logs",
+      "question": "The integrity of log data is protected, verified, and any modification (including deletion) detected and attributed.",
+      "igpTheme": "Verified log integrity"
+    },
+    {
+      "ref": "C1.c.1",
+      "id": "CAF4.0-C1.c.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "You can easily detect the presence of Indicators of Compromise (IoCs) on network and information systems, as well as abnormalities/behaviours indicative of adverse activity.",
+      "igpTheme": "IoC & anomaly detection"
+    },
+    {
+      "ref": "C1.c.2",
+      "id": "CAF4.0-C1.c.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "You apply all updates, new signatures and IoCs promptly.",
+      "igpTheme": "Prompt signature/IoC updates"
+    },
+    {
+      "ref": "C1.c.3",
+      "id": "CAF4.0-C1.c.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "Security alerts relating to all network and information systems are prioritised and used to support incident management.",
+      "igpTheme": "Prioritised alerts feeding incident mgmt"
+    },
+    {
+      "ref": "C1.c.4",
+      "id": "CAF4.0-C1.c.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "Alerts are routinely enriched in almost real time as part of the original alert.",
+      "igpTheme": "Real-time alert enrichment"
+    },
+    {
+      "ref": "C1.c.5",
+      "id": "CAF4.0-C1.c.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "Alerts and underlying detections are regularly reviewed/tested to ensure they fire promptly and reliably and distinguish genuine incidents from false alarms.",
+      "igpTheme": "Reviewed & tested detections"
+    },
+    {
+      "ref": "C1.c.6",
+      "id": "CAF4.0-C1.c.6",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "Detection rules are customisable and tuned to reduce false positives and optimise responses, using off-the-shelf and/or custom tooling.",
+      "igpTheme": "Tuned, customisable detections"
+    },
+    {
+      "ref": "C1.c.7",
+      "id": "CAF4.0-C1.c.7",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.c Generating Alerts",
+      "question": "You continuously monitor for user/system abnormalities, generating alerts, with logs monitored continuously in near real time.",
+      "igpTheme": "Continuous near-real-time monitoring"
+    },
+    {
+      "ref": "C1.d.1",
+      "id": "CAF4.0-C1.d.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.d Triage of Security Alerts",
+      "question": "You investigate and triage alerts from all security tools and take action.",
+      "igpTheme": "Triage of all tool alerts"
+    },
+    {
+      "ref": "C1.d.2",
+      "id": "CAF4.0-C1.d.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.d Triage of Security Alerts",
+      "question": "You have and use SOPs/playbooks/runbooks covering all plausible use cases, regularly reviewed to remain effective.",
+      "igpTheme": "Comprehensive, reviewed playbooks"
+    },
+    {
+      "ref": "C1.d.3",
+      "id": "CAF4.0-C1.d.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.d Triage of Security Alerts",
+      "question": "You categorise alerts and incidents by type and priority/severity level.",
+      "igpTheme": "Categorisation by type & severity"
+    },
+    {
+      "ref": "C1.d.4",
+      "id": "CAF4.0-C1.d.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.d Triage of Security Alerts",
+      "question": "You document all triage activities and use them to drive improvements, providing enough information to prioritise subsequent activities.",
+      "igpTheme": "Documented triage driving improvement"
+    },
+    {
+      "ref": "C1.d.5",
+      "id": "CAF4.0-C1.d.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.d Triage of Security Alerts",
+      "question": "Your understanding of normal user and system behaviour, and threats is sufficient for effective decision-making within triage.",
+      "igpTheme": "Behavioural baseline for triage"
+    },
+    {
+      "ref": "C1.e.1",
+      "id": "CAF4.0-C1.e.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "You have monitoring and detection personnel responsible for proactive and reactive analysis, investigation and reporting of monitoring alerts (security and performance).",
+      "igpTheme": "Dedicated monitoring personnel"
+    },
+    {
+      "ref": "C1.e.2",
+      "id": "CAF4.0-C1.e.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "Personnel have defined roles and skills covering all parts of the monitoring and investigation process.",
+      "igpTheme": "Defined roles & full-process skills"
+    },
+    {
+      "ref": "C1.e.3",
+      "id": "CAF4.0-C1.e.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "Personnel follow policies, processes and procedures that address all governance reporting requirements, internal and external.",
+      "igpTheme": "Governance reporting capability"
+    },
+    {
+      "ref": "C1.e.4",
+      "id": "CAF4.0-C1.e.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "Personnel are empowered to look beyond the fixed process to investigate and understand non-standard threats.",
+      "igpTheme": "Empowered investigation"
+    },
+    {
+      "ref": "C1.e.5",
+      "id": "CAF4.0-C1.e.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "Personnel are aware of the network and information systems, essential function(s) and related assets, are able to prioritise relevant alerts, and drive/shape new log data collection.",
+      "igpTheme": "Operational awareness & data-source shaping"
+    },
+    {
+      "ref": "C1.e.6",
+      "id": "CAF4.0-C1.e.6",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.e Personnel Skills for Monitoring & Detection",
+      "question": "Personnel handle their workload and cases effectively while identifying areas for improvement, avoiding alert/triage fatigue.",
+      "igpTheme": "Effective workload & continuous improvement"
+    },
+    {
+      "ref": "C1.f.1",
+      "id": "CAF4.0-C1.f.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "You know how effective your threat intelligence is (e.g. by tracking how it helps identify incidents) and actively share feedback with the threat community.",
+      "igpTheme": "Measured TI effectiveness & feedback"
+    },
+    {
+      "ref": "C1.f.2",
+      "id": "CAF4.0-C1.f.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "Threat intelligence feeds are selected using risk-based and threat-informed decisions based on your business needs and sector.",
+      "igpTheme": "Risk-based TI feed selection"
+    },
+    {
+      "ref": "C1.f.3",
+      "id": "CAF4.0-C1.f.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "You make relevant, reliable and actionable threat intelligence available to necessary users/systems promptly, contextualising it to the why/how of attacks.",
+      "igpTheme": "Actionable, contextualised TI"
+    },
+    {
+      "ref": "C1.f.4",
+      "id": "CAF4.0-C1.f.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "You understand normal user and system behaviour fully, such that searching for abnormalities is an effective way of detecting adverse activity.",
+      "igpTheme": "Full behavioural baseline"
+    },
+    {
+      "ref": "C1.f.5",
+      "id": "CAF4.0-C1.f.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "The abnormalities you monitor for are based on adverse activities likely to impact network and information systems, and regularly updated to reflect changes and current threat intelligence.",
+      "igpTheme": "Relevant, updated anomaly definitions"
+    },
+    {
+      "ref": "C1.f.6",
+      "id": "CAF4.0-C1.f.6",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C1 Security Monitoring",
+      "contributingOutcome": "C1.f User/System Behaviour & Threat Intelligence",
+      "question": "You have the capability to share threat intelligence with the threat/defender community when required.",
+      "igpTheme": "TI sharing capability"
+    },
+    {
+      "ref": "C2.a.1",
+      "id": "CAF4.0-C2.a.1",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "You understand the resources required for threat hunting and deploy them as part of business as usual.",
+      "igpTheme": "Threat hunting as business as usual"
+    },
+    {
+      "ref": "C2.a.2",
+      "id": "CAF4.0-C2.a.2",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "You deploy threat hunting resources at a frequency that matches the risks posed to network and information systems.",
+      "igpTheme": "Risk-matched hunting frequency"
+    },
+    {
+      "ref": "C2.a.3",
+      "id": "CAF4.0-C2.a.3",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "Your threat hunts follow pre-determined and documented methods (e.g. hypothesis-, data- or entity-driven) designed to find adverse activity not caught by automated detections.",
+      "igpTheme": "Documented hunting methods"
+    },
+    {
+      "ref": "C2.a.4",
+      "id": "CAF4.0-C2.a.4",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "You turn threat hunts into automated detections and alerting where appropriate, and leverage automation to improve hunts.",
+      "igpTheme": "Hunt-to-detection automation"
+    },
+    {
+      "ref": "C2.a.5",
+      "id": "CAF4.0-C2.a.5",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "You routinely record details of previous hunts and post-hunt activities and use them to drive improvements in hunting and security posture.",
+      "igpTheme": "Recorded hunts driving improvement"
+    },
+    {
+      "ref": "C2.a.6",
+      "id": "CAF4.0-C2.a.6",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "You have justified confidence in the effectiveness of your hunts, with the process reviewed and updated to match risks.",
+      "igpTheme": "Justified confidence & process review"
+    },
+    {
+      "ref": "C2.a.7",
+      "id": "CAF4.0-C2.a.7",
+      "objective": "C - Detecting cyber security events",
+      "principle": "C2 Threat Hunting",
+      "contributingOutcome": "C2.a Threat Hunting",
+      "question": "Your threat hunts focus on the tactics, techniques and procedures (TTPs) of threats over atomic IoCs (e.g. hashes, IP addresses, domain names).",
+      "igpTheme": "TTP-focused hunting"
+    },
+    {
+      "ref": "D1.a.1",
+      "id": "CAF4.0-D1.a.1",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.a Response Plan",
+      "question": "Your incident response plan is based on a clear understanding of the security risks to network and information systems.",
+      "igpTheme": "Risk-grounded response plan"
+    },
+    {
+      "ref": "D1.a.2",
+      "id": "CAF4.0-D1.a.2",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.a Response Plan",
+      "question": "Your incident response plan is comprehensive (covering the complete incident lifecycle, roles/responsibilities and reporting) and covers likely impacts of both known attack patterns and previously unseen possible attacks.",
+      "igpTheme": "Comprehensive lifecycle coverage"
+    },
+    {
+      "ref": "D1.a.3",
+      "id": "CAF4.0-D1.a.3",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.a Response Plan",
+      "question": "The plan is documented and integrated with wider organisational business plans, supply-chain response plans and dependencies on supporting infrastructure (e.g. power, cooling).",
+      "igpTheme": "Integrated with business & supply chain"
+    },
+    {
+      "ref": "D1.a.4",
+      "id": "CAF4.0-D1.a.4",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.a Response Plan",
+      "question": "The plan is communicated to and understood by the business areas involved with the essential function(s), and readily accessible even when IT systems are affected.",
+      "igpTheme": "Understood & resiliently accessible"
+    },
+    {
+      "ref": "D1.a.5",
+      "id": "CAF4.0-D1.a.5",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.a Response Plan",
+      "question": "The plan is regularly reviewed to ensure it remains effective.",
+      "igpTheme": "Regular plan review"
+    },
+    {
+      "ref": "D1.b.1",
+      "id": "CAF4.0-D1.b.1",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "You understand the resources likely needed for response activities, with arrangements in place to make them available.",
+      "igpTheme": "Response resources arranged"
+    },
+    {
+      "ref": "D1.b.2",
+      "id": "CAF4.0-D1.b.2",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "You understand the types of information needed to inform response decisions, with arrangements to make it available during an incident.",
+      "igpTheme": "Decision information available"
+    },
+    {
+      "ref": "D1.b.3",
+      "id": "CAF4.0-D1.b.3",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "Your response team members have the skills, knowledge and authority to decide on and carry out response actions to limit harm.",
+      "igpTheme": "Skilled, empowered responders"
+    },
+    {
+      "ref": "D1.b.4",
+      "id": "CAF4.0-D1.b.4",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "Key roles are duplicated and operational delivery knowledge shared across individuals involved in operations and recovery.",
+      "igpTheme": "Duplicated roles & shared knowledge"
+    },
+    {
+      "ref": "D1.b.5",
+      "id": "CAF4.0-D1.b.5",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "Back-up mechanisms are available that can be readily activated to allow continued operation of the essential function(s) (possibly at reduced level) if primary network and information systems fail.",
+      "igpTheme": "Activatable back-up operation"
+    },
+    {
+      "ref": "D1.b.6",
+      "id": "CAF4.0-D1.b.6",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.b Response & Recovery Capability",
+      "question": "Arrangements exist to augment your incident response capabilities with external support (e.g. specialist cyber incident responders) if necessary.",
+      "igpTheme": "External support arrangements"
+    },
+    {
+      "ref": "D1.c.1",
+      "id": "CAF4.0-D1.c.1",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.c Testing & Exercising",
+      "question": "Exercise scenarios are based on incidents experienced by you and other organisations, or composed using experience or threat intelligence.",
+      "igpTheme": "Realistic exercise scenarios"
+    },
+    {
+      "ref": "D1.c.2",
+      "id": "CAF4.0-D1.c.2",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.c Testing & Exercising",
+      "question": "Exercise scenarios are documented, regularly reviewed and validated.",
+      "igpTheme": "Documented, validated scenarios"
+    },
+    {
+      "ref": "D1.c.3",
+      "id": "CAF4.0-D1.c.3",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.c Testing & Exercising",
+      "question": "Exercises are routinely run, with findings documented and used to refine response plans and protective security in line with lessons learned.",
+      "igpTheme": "Routine exercises driving refinement"
+    },
+    {
+      "ref": "D1.c.4",
+      "id": "CAF4.0-D1.c.4",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D1 Response & Recovery Planning",
+      "contributingOutcome": "D1.c Testing & Exercising",
+      "question": "Exercises test all parts of your response cycle relating to the essential function(s) (e.g. restoration of normal function levels).",
+      "igpTheme": "Full response-cycle testing"
+    },
+    {
+      "ref": "D2.a.1",
+      "id": "CAF4.0-D2.a.1",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.a Post Incident Analysis",
+      "question": "Post-incident analysis is conducted routinely as a key part of your lessons-learned activities following an incident.",
+      "igpTheme": "Routine post-incident analysis"
+    },
+    {
+      "ref": "D2.a.2",
+      "id": "CAF4.0-D2.a.2",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.a Post Incident Analysis",
+      "question": "Post-incident analysis is comprehensive, considering organisational, technical and human factors and any changes to threat.",
+      "igpTheme": "Comprehensive multi-factor analysis"
+    },
+    {
+      "ref": "D2.a.3",
+      "id": "CAF4.0-D2.a.3",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.a Post Incident Analysis",
+      "question": "All relevant incident data is made available to the analysis team.",
+      "igpTheme": "Full data availability for analysis"
+    },
+    {
+      "ref": "D2.a.4",
+      "id": "CAF4.0-D2.a.4",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.a Post Incident Analysis",
+      "question": "Your analysis considers what could have happened under plausible alternative circumstances ('what if'/'if only'), avoiding early theory fixation or a blame focus.",
+      "igpTheme": "Counterfactual, blame-free analysis"
+    },
+    {
+      "ref": "D2.b.1",
+      "id": "CAF4.0-D2.b.1",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.b Using Incidents to Drive Improvements",
+      "question": "You have a documented incident review process/policy ensuring lessons learned from each incident, including near misses, are identified, captured and acted upon.",
+      "igpTheme": "Documented lessons-learned process"
+    },
+    {
+      "ref": "D2.b.2",
+      "id": "CAF4.0-D2.b.2",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.b Using Incidents to Drive Improvements",
+      "question": "Lessons learned cover reporting, roles, governance, skills and organisational policies, processes and procedures as well as technical aspects.",
+      "igpTheme": "Broad lessons-learned scope"
+    },
+    {
+      "ref": "D2.b.3",
+      "id": "CAF4.0-D2.b.3",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.b Using Incidents to Drive Improvements",
+      "question": "You use lessons learned to improve security measures, including updating and re-testing response plans when necessary.",
+      "igpTheme": "Improvement & plan re-testing"
+    },
+    {
+      "ref": "D2.b.4",
+      "id": "CAF4.0-D2.b.4",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.b Using Incidents to Drive Improvements",
+      "question": "Security improvements from lessons learned are prioritised, with the highest-priority improvements completed promptly.",
+      "igpTheme": "Prioritised, prompt improvements"
+    },
+    {
+      "ref": "D2.b.5",
+      "id": "CAF4.0-D2.b.5",
+      "objective": "D - Minimising the impact of cyber security incidents",
+      "principle": "D2 Lessons Learned",
+      "contributingOutcome": "D2.b Using Incidents to Drive Improvements",
+      "question": "Analysis is fed to senior management and incorporated into risk management and continuous improvement, and lessons are learned from incidents in your sector and wider national infrastructure.",
+      "igpTheme": "Senior feed & sector learning"
+    }
+  ]
+}
+</script>
+<div class="topbar">
+  <div class="brand"><span class="t">Cyber Assessment Framework 4.0</span><span class="s">Maturity self-assessment</span></div>
+  <div class="spacer"></div>
+  <div class="gprog"><span class="lbl">Maturity</span><div class="bar"><i id="gbar"></i></div><span class="lbl" id="gpct">0%</span></div>
+  <div class="tools">
+    <input id="file" type="file" accept="application/json,.json" hidden>
+    <button class="btn btn-ghost" id="resetBtn" title="Clear all scores and evidence">Reset</button>
+    <button class="btn btn-ghost" id="loadBtn" title="Load a saved assessment or an updated question set">Load JSON</button>
+    <button class="btn btn-purple" id="jsonBtn">Export JSON</button>
+    <button class="btn btn-primary" id="xlsBtn">Export Excel</button>
+  </div>
+</div>
+<div class="app">
+  <nav class="rail" id="rail"></nav>
+  <main class="main" id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = JSON.parse(document.getElementById('caf-data').textContent);
+const LEVELS = DATA.maturityScale.levels.slice().sort((a,b)=>a.score-b.score);
+const BANDS = DATA.maturityScale.rollup.bands;
+const BAND_NAMES = ["Not Achieved","Initial","Partially Achieved","Largely Achieved","Fully Achieved"];
+const INFO_SVG='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4.5"/><path d="M12 8h.01"/></svg>';
+const OBJ_DESC = {
+ "A":"Appropriate organisational structures, policies, processes and procedures in place to understand, assess and systematically manage security risks to network and information systems supporting essential functions.",
+ "B":"Proportionate security measures are in place to protect network and information systems supporting essential functions from cyber attack.",
+ "C":"Capabilities exist to ensure security defences remain effective and to detect cyber security events and incidents adversely affecting, or with the potential to adversely affect, essential functions.",
+ "D":"Capabilities exist to minimise the adverse impact of a cyber security incident on the operation of essential functions, including the restoration of those functions where necessary."
+};
+
+// ---- state ----
+const state = { responses:{}, evidence:{} };
+function initDefaults(){
+  state.responses={}; state.evidence={};
+  DATA.questions.forEach(q=>{ state.responses[q.ref]=0; });
+}
+
+// ---- build hierarchy from flat questions ----
+const tree = [];
+const objIndex = {};
+for(const q of DATA.questions){
+  const oc=q.ref[0], pc=q.ref.slice(0,2), cc=q.ref.slice(0,4);
+  let o=objIndex[oc];
+  if(!o){o={code:oc,label:q.objective,principles:[],pidx:{}};objIndex[oc]=o;tree.push(o);}
+  let p=o.pidx[pc];
+  if(!p){p={code:pc,label:q.principle,outcomes:[],oidx:{}};o.pidx[pc]=p;o.principles.push(p);}
+  let c=p.oidx[cc];
+  if(!c){c={code:cc,label:q.contributingOutcome,questions:[]};p.oidx[cc]=c;p.outcomes.push(c);}
+  c.questions.push(q);
+}
+const ALL_OBJ = tree.map(o=>o.code);
+
+// ---- helpers ----
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function bandIndexFor(avg){
+  if(avg==null) return -1;
+  for(let i=0;i<BANDS.length;i++){const b=BANDS[i];const lo=b.minInclusive,hi=b.maxExclusive;
+    if(avg>=lo && (hi==null||avg<hi)) return i;}
+  return -1;
+}
+function scoresFor(filterFn){
+  const arr=[];
+  for(const q of DATA.questions){ if(filterFn(q)){ const v=state.responses[q.ref]; if(typeof v==='number') arr.push(v);} }
+  return arr;
+}
+function avgOf(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function countFor(filterFn){return DATA.questions.filter(filterFn).length;}
+function applicableFor(filterFn){return DATA.questions.filter(q=>filterFn(q)&&typeof state.responses[q.ref]==='number').length;}
+function naCountFor(filterFn){return DATA.questions.filter(q=>filterFn(q)&&state.responses[q.ref]==='na').length;}
+
+// ---- render rail ----
+function renderRail(){
+  const rail=$('#rail'); rail.innerHTML='';
+  // guidance
+  const gd=document.createElement('button');
+  gd.className='navitem gd'; gd.dataset.view='guidance';
+  gd.innerHTML=`<span class="chip">${INFO_SVG}</span><span class="meta"><span class="nm">Guidance</span><span class="pc">How this works</span></span>`;
+  gd.onclick=()=>show('guidance');
+  rail.appendChild(gd);
+  // objectives label
+  const lab=document.createElement('h2'); lab.className='raillabel'; lab.textContent='Objectives'; rail.appendChild(lab);
+  tree.forEach(o=>{
+    const f=q=>q.ref[0]===o.code;
+    const a=avgOf(scoresFor(f));
+    const pct=a==null?0:Math.round(a/4*100);
+    const bi=bandIndexFor(a);
+    const col=['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)'][bi]||'#cdd3db';
+    const b=document.createElement('button');
+    b.className='navitem'; b.dataset.view='obj-'+o.code;
+    b.innerHTML=`<span class="chip">${o.code}</span><span class="meta"><span class="nm">${esc(o.label.replace(/^[A-D]\s*-\s*/,''))}</span><span class="pb"><i style="width:${pct}%;background:${col}"></i></span><span class="pc">${a==null?'&ndash;':a.toFixed(2)+' / 4'}</span></span>`;
+    b.onclick=()=>show('obj-'+o.code);
+    rail.appendChild(b);
+  });
+  const s=document.createElement('button');
+  s.className='navitem sum'; s.dataset.view='summary';
+  s.innerHTML=`<span class="chip">&#931;</span><span class="meta"><span class="nm">Summary &amp; export</span><span class="pc">Results overview</span></span>`;
+  s.onclick=()=>show('summary');
+  rail.appendChild(s);
+}
+
+// ---- render objective view ----
+function objView(o){
+  const v=document.createElement('section'); v.className='view'; v.id='view-obj-'+o.code;
+  let h=`<div class="ohead"><div class="big">${o.code}</div><div>
+      <div class="eyebrow">Objective ${o.code}</div>
+      <h1>${esc(o.label.replace(/^[A-D]\s*-\s*/,''))}</h1>
+      <p>${esc(OBJ_DESC[o.code]||'')}</p></div></div>`;
+  o.principles.forEach(p=>{
+    h+=`<div class="principle"><div class="lab">Principle ${esc(p.code)}</div><h2>${esc(p.label.replace(/^[A-D]\d\s*/,''))}</h2></div>`;
+    p.outcomes.forEach(c=>{
+      h+=`<div class="card"><header><span class="ref">${esc(c.code)}</span><h3>${esc(c.label.replace(/^[A-D]\d\.[a-z]\s*/,''))}</h3><span class="ocount">${c.questions.length} question${c.questions.length>1?'s':''}</span><button type="button" class="btn btn-ghost na-all" data-outcome="${esc(c.code)}" title="Mark all questions in ${esc(c.code)} as Not applicable">N/A &mdash; Not Applicable</button></header>`;
+      c.questions.forEach(q=>{
+        h+=`<div class="q" id="q-${q.ref}" data-ref="${q.ref}"><div class="qtop"><span class="qref">${esc(q.ref)}</span><div><div class="qtext">${esc(q.question)}</div><div class="igp">${esc(q.igpTheme)}</div></div></div>`;
+        h+=`<div class="scalewrap" role="radiogroup" aria-label="Maturity score for ${esc(q.ref)}"><div class="scale">`;
+        LEVELS.forEach(l=>{
+          const id=`r-${q.ref}-${l.score}`;
+          h+=`<span class="seg s${l.score}"><input type="radio" id="${id}" name="sc-${q.ref}" value="${l.score}" data-ref="${q.ref}" aria-describedby="${id}-tip"><label for="${id}"><span class="num">${l.score}</span><span class="nm">${esc(l.level)}</span><span class="tip" id="${id}-tip" role="tooltip">${esc(l.description)}</span></label></span>`;
+        });
+        h+=`</div>`;
+        const naid=`r-${q.ref}-na`;
+        h+=`<span class="naseg"><input type="radio" id="${naid}" name="sc-${q.ref}" value="na" data-ref="${q.ref}" aria-describedby="${naid}-tip"><label for="${naid}"><span class="num">N/A</span><span class="nm">Not applicable</span><span class="tip" id="${naid}-tip" role="tooltip">Not applicable \u2014 excluded from maturity calculations</span></label></span>`;
+        h+=`</div></div>`;
+      });
+      h+=`<div class="evid"><label for="ev-${c.code}">Evidence and notes <span>&mdash; ${esc(c.code)} ${esc(c.label.replace(/^[A-D]\d\.[a-z]\s*/,''))}</span></label><textarea id="ev-${c.code}" data-outcome="${c.code}" placeholder="Record the evidence, justification, gaps or actions that support the scores above."></textarea></div>`;
+      h+=`</div>`;
+    });
+  });
+  // pager
+  const idx=ALL_OBJ.indexOf(o.code);
+  const prev=idx>0?'obj-'+ALL_OBJ[idx-1]:null;
+  const next=idx<ALL_OBJ.length-1?'obj-'+ALL_OBJ[idx+1]:'summary';
+  h+=`<div class="pager"><button ${prev?`onclick="show('${prev}')"`:'disabled'}>&larr; Previous</button>
+      <button onclick="show('${next}')">${next==='summary'?'Go to summary &rarr;':'Next objective &rarr;'}</button></div>`;
+  v.innerHTML=h;
+  return v;
+}
+
+// ---- render summary view ----
+function summaryView(){
+  const v=document.createElement('section'); v.className='view'; v.id='view-summary';
+  v.innerHTML=`<div class="sumhead"><div class="eyebrow">Results</div><h1>Summary &amp; export</h1>
+    <p>Maturity is the average question score (0&ndash;4) rolled up to each level and mapped to a CAF band. Questions marked <strong>Not applicable</strong> are excluded from every average.</p></div>
+    <div class="overall" id="overall"></div>
+    <div class="hint">Tip: <strong>Export JSON</strong> saves everything &mdash; scores and evidence &mdash; and can be loaded again later with <strong>Load JSON</strong> to carry on. <strong>Export Excel</strong> produces a formatted workbook for reporting.</div>
+    <div id="sumtables"></div>`;
+  return v;
+}
+
+function bandPill(i){return i<0?'<span class="pill bn">Not applicable</span>':`<span class="pill b${i}">${BAND_NAMES[i]}</span>`;}
+function miniBar(avg){const i=bandIndexFor(avg);const col=['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)'][i]||'#cdd3db';const w=avg==null?0:Math.round(avg/4*100);return `<span class="barwrap"><span class="minibar"><i style="width:${w}%;background:${col}"></i></span></span>`;}
+
+function refreshSummary(){
+  const allScores=Object.values(state.responses).filter(v=>typeof v==='number');
+  const oavg=avgOf(allScores); const oi=bandIndexFor(oavg);
+  const total=DATA.questions.length, raised=allScores.filter(v=>v>0).length;
+  const naTotal=Object.values(state.responses).filter(v=>v==='na').length;
+  $('#overall').innerHTML=`
+    <div class="kpi"><div class="k">Overall maturity</div><div class="v">${oavg==null?'&ndash;':oavg.toFixed(2)}<span style="font-size:15px;color:var(--muted2);font-weight:600"> / 4</span></div></div>
+    <div class="kpi"><div class="k">Band</div><div class="v" style="font-size:20px;margin-top:10px">${bandPill(oi)}</div></div>
+    <div class="kpi"><div class="k">Scored above &lsquo;Not Achieved&rsquo;</div><div class="v">${raised}<span style="font-size:14px;color:var(--muted2);font-weight:600"> / ${total-naTotal} in scope</span></div></div>
+    <div class="kpi"><div class="k">Not applicable</div><div class="v">${naTotal}<span style="font-size:14px;color:var(--muted2);font-weight:600"> / ${total}</span></div></div>`;
+
+  const objRows=tree.map(o=>{const f=q=>q.ref[0]===o.code;const a=avgOf(scoresFor(f));return row(o.label,a,f);}).join('');
+  const prinRows=[]; tree.forEach(o=>o.principles.forEach(p=>{const f=q=>q.ref.slice(0,2)===p.code;prinRows.push(row(p.label,avgOf(scoresFor(f)),f));}));
+  const outRows=[]; tree.forEach(o=>o.principles.forEach(p=>p.outcomes.forEach(c=>{const f=q=>q.ref.slice(0,4)===c.code;outRows.push(row(c.label,avgOf(scoresFor(f)),f,true));})));
+  function row(label,a,f,isOut){const i=bandIndexFor(a);const ans=applicableFor(f),tot=countFor(f);
+    return `<tr><td>${isOut?'<span class="r" style="margin-right:6px">'+esc(label.slice(0,4))+'</span>'+esc(label.slice(5)):esc(label)}</td>
+      <td class="num">${a==null?'&ndash;':a.toFixed(2)}</td>
+      <td>${miniBar(a)} ${bandPill(i)}</td>
+      <td class="cnt">${ans}/${tot}</td></tr>`;}
+  $('#sumtables').innerHTML=`
+    ${table('By objective','Objective',objRows)}
+    ${table('By principle','Principle',prinRows)}
+    ${table('By contributing outcome','Contributing outcome',outRows)}`;
+  function table(cap,h1,rows){return `<table class="sumtable"><caption>${cap}</caption>
+    <thead><tr><th>${h1}</th><th style="text-align:center">Avg</th><th>Maturity band</th><th style="text-align:center">In scope</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;}
+}
+
+// ---- guidance view ----
+function guidanceView(){
+  const v=document.createElement('section'); v.className='view'; v.id='view-guidance';
+  const nPrin=tree.reduce((s,o)=>s+o.principles.length,0);
+  const nOut=tree.reduce((s,o)=>s+o.principles.reduce((t,p)=>t+p.outcomes.length,0),0);
+  const nQ=DATA.questions.length;
+  const colors=['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)'];
+  const scaleRows=LEVELS.map(l=>`<tr><td><span class="sw" style="background:${colors[l.score]}">${l.score}</span></td><td class="lv">${esc(l.level)}</td><td>${esc(l.description)}</td><td>${esc(l.cafBand)}</td></tr>`).join('');
+  const rb=DATA.maturityScale.rollup.bands;
+  const bandText=rb.map(b=>`${b.minInclusive}${b.maxExclusive==null?'+':'\u2013'+b.maxExclusive} ${b.band}`).join('  |  ');
+  v.innerHTML=`
+    <div class="sumhead"><div class="eyebrow">Guidance</div><h1>How this assessment works</h1>
+      <p>A structured, scored self-assessment built on the NCSC Cyber Assessment Framework 4.0.</p></div>
+    <div class="guide">
+      <div class="chips">
+        <div class="stat"><b>${tree.length}</b><span>Objectives</span></div>
+        <div class="stat"><b>${nPrin}</b><span>Principles</span></div>
+        <div class="stat"><b>${nOut}</b><span>Contributing outcomes</span></div>
+        <div class="stat"><b>${nQ}</b><span>Questions</span></div>
+      </div>
+
+      <h2><span class="eb">Purpose</span>What this tool does</h2>
+      <p>This tool turns the four CAF objectives, ${nPrin} principles and ${nOut} contributing outcomes into ${nQ} questions derived directly from the CAF Indicators of Good Practice (IGPs). Scoring the questions produces a maturity picture for every contributing outcome, principle and objective.</p>
+
+      <h2><span class="eb">Method</span>How to use it</h2>
+      <ol>
+        <li>Open each objective (A&ndash;D) from the left and work through its contributing outcomes.</li>
+        <li>For every question, choose a maturity score from 0 to 4 on the scale beneath it. Every question starts at <strong>Not Achieved</strong>, so raise the ones where you can evidence a higher level. Hover a level to see what it means, or pick <strong>N/A</strong> to mark a question Not Applicable and exclude it from the maturity calculations.</li>
+        <li>After each contributing outcome, record supporting evidence, justification or gaps in the evidence box. This is what turns a tick-box into a defensible judgement.</li>
+        <li>Watch your position build on the <strong>Summary</strong> page, which shows maturity by objective, by principle and by contributing outcome, plus an overall score.</li>
+        <li>Use <strong>Export JSON</strong> to save your progress (and <strong>Load JSON</strong> to resume), and <strong>Export Excel</strong> for a formatted report. Re-baseline periodically.</li>
+      </ol>
+
+      <div class="callout"><strong>Important &mdash; this is not a tick-box exercise.</strong> The CAF is outcome-focused. The IGPs are examples that inform expert judgement; they are not an exhaustive checklist and may need supplementing or interpreting for your sector. Treat every score as a judgement supported by evidence, not a box ticked &mdash; a score is only as good as the reasoning recorded against it.</div>
+
+      <h2><span class="eb">Scoring</span>Relationship to the native CAF bands</h2>
+      <p>The CAF assesses each contributing outcome as Not Achieved (red), Partially Achieved / amber (where that band exists) or Achieved (green). This tool overlays a 0&ndash;4 maturity scale on top of those bands so you can track progress and trend over time, while still mapping back to the native CAF result. For the nine contributing outcomes that have no amber band in the CAF, level 2 represents a meaningful transitional state on the way to Achieved.</p>
+
+      <h2><span class="eb">Reference</span>The maturity scale</h2>
+      <table class="scaletable"><thead><tr><th>Score</th><th>Maturity level</th><th>What it means</th><th>Maps to CAF band</th></tr></thead><tbody>${scaleRows}</tbody></table>
+      <p class="foot"><strong>Roll-up:</strong> an outcome, principle or objective score is the average of the question scores beneath it (only answered questions count). Bands used on the Summary page: ${esc(bandText)}.</p>
+
+      <h2><span class="eb">Scope</span>Scope and applicability</h2>
+      <p>Throughout, &lsquo;network and information systems&rsquo; refers to those supporting the operation of your essential function(s). The questions are written for self-assessment but map cleanly to independent or regulator-led assessment.</p>
+
+      <p class="foot">Source: NCSC Cyber Assessment Framework 4.0. Crown copyright 2025, licensed under the Open Government Licence v3.0. Questions are derived and paraphrased from the CAF Indicators of Good Practice.</p>
+
+      <div class="pager"><span></span><button onclick="show('obj-${ALL_OBJ[0]}')">Start objective ${ALL_OBJ[0]} &rarr;</button></div>
+    </div>`;
+  return v;
+}
+
+// ---- mount ----
+const main=$('#main');
+main.appendChild(guidanceView());
+tree.forEach(o=>main.appendChild(objView(o)));
+main.appendChild(summaryView());
+
+// scores
+main.addEventListener('change',e=>{
+  const r=e.target.closest('input[type=radio]'); if(!r) return;
+  const ref=r.dataset.ref; state.responses[ref]= r.value==='na' ? 'na' : Number(r.value);
+  markQ(ref); updateProgress();
+});
+// evidence
+main.addEventListener('input',e=>{
+  const t=e.target.closest('textarea[data-outcome]'); if(!t) return;
+  state.evidence[t.dataset.outcome]=t.value;
+});
+// outcome-level "mark all as N/A"
+main.addEventListener('click',e=>{
+  const btn=e.target.closest('.na-all'); if(!btn) return;
+  const outcome=btn.dataset.outcome;
+  DATA.questions.filter(q=>q.contributingOutcome && q.contributingOutcome.startsWith(outcome+' ')).forEach(q=>{
+    const radio=document.getElementById(`r-${q.ref}-na`);
+    if(radio){ radio.checked=true; }
+    state.responses[q.ref]='na';
+    markQ(q.ref);
+  });
+  updateProgress();
+  toast(`All questions in ${outcome} marked as Not applicable`);
+});
+
+function markQ(ref){
+  const el=document.getElementById('q-'+ref); if(!el) return;
+  const v=state.responses[ref];
+  el.classList.remove('answered','a0','a1','a2','a3','a4','na');
+  if(v==='na'){ el.classList.add('na'); }
+  else if(v!=null){ el.classList.add('answered','a'+v); }
+}
+function updateProgress(){
+  const vals=DATA.questions.map(q=>state.responses[q.ref]).filter(v=>typeof v==='number');
+  const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  const pct=Math.round(avg/4*100);
+  const bi=bandIndexFor(avg);
+  const col=['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)'][bi]||'#46c2c2';
+  const gb=$('#gbar'); gb.style.width=pct+'%'; gb.style.background=col;
+  $('#gpct').textContent=pct+'%';
+  renderRail();
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.view===current));
+}
+
+// ---- view switching ----
+let current=null;
+function show(id){
+  current=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+id));
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.view===id));
+  if(id==='summary') refreshSummary();
+  window.scrollTo({top:0,behavior:'instant'in window?'instant':'auto'});
+  history.replaceState(null,'','#'+id);
+}
+
+// ---- apply loaded responses to DOM ----
+function hydrate(){
+  for(const ref in state.responses){
+    const v=state.responses[ref]; if(v==null) continue;
+    const inp=document.getElementById(`r-${ref}-${v}`); if(inp){inp.checked=true; markQ(ref);}
+  }
+  for(const oc in state.evidence){
+    const ta=document.getElementById('ev-'+oc); if(ta) ta.value=state.evidence[oc];
+  }
+  updateProgress();
+}
+
+// ---- toast ----
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
+
+// ---- export JSON ----
+function buildExport(){
+  const allScores=Object.values(state.responses).filter(v=>typeof v==='number');
+  const naAll=Object.values(state.responses).filter(v=>v==='na').length;
+  const summary={
+    overall:{avg:round2(avgOf(allScores)),band:nm(bandIndexFor(avgOf(allScores))),scored:allScores.length,notApplicable:naAll,total:DATA.questions.length},
+    byObjective:tree.map(o=>{const f=q=>q.ref[0]===o.code;const a=avgOf(scoresFor(f));return{ref:o.code,name:o.label,avg:round2(a),band:nm(bandIndexFor(a)),inScope:applicableFor(f),notApplicable:naCountFor(f),total:countFor(f)};}),
+    byContributingOutcome:[]
+  };
+  tree.forEach(o=>o.principles.forEach(p=>p.outcomes.forEach(c=>{const f=q=>q.ref.slice(0,4)===c.code;const a=avgOf(scoresFor(f));
+    summary.byContributingOutcome.push({ref:c.code,name:c.label,avg:round2(a),band:nm(bandIndexFor(a)),inScope:applicableFor(f),notApplicable:naCountFor(f),total:countFor(f)});})));
+  return {
+    meta:DATA.meta,
+    maturityScale:DATA.maturityScale,
+    assessment:{exportedAt:new Date().toISOString(),responses:{...state.responses},evidence:{...state.evidence},summary},
+    questions:DATA.questions
+  };
+}
+function nm(i){return i<0?null:BAND_NAMES[i];}
+function round2(x){return x==null?null:Math.round(x*100)/100;}
+function download(name,text,type){const b=new Blob([text],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);}
+function stamp(){return new Date().toISOString().slice(0,10);}
+
+$('#jsonBtn').onclick=()=>{download(`CAF_Maturity_Assessment_${stamp()}.json`,JSON.stringify(buildExport(),null,2),'application/json');toast('JSON exported \u2014 keep it to resume later');};
+
+// ---- export Excel (real .xlsx, self-contained writer) ----
+function downloadBlob(name,blob){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);}
+$('#xlsBtn').onclick=()=>{
+  const blob=new Blob([buildXlsx()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  downloadBlob(`CAF_Maturity_Assessment_${stamp()}.xlsx`, blob);
+  toast('Excel workbook exported');
+};
+
+function xe(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// minimal store-only ZIP with CRC32 -> Uint8Array
+const _crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function _crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=_crcT[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function _zip(files){
+  const enc=new TextEncoder(); const u16=n=>[n&255,(n>>8)&255]; const u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255];
+  const parts=[]; const central=[]; let offset=0;
+  for(const f of files){
+    const name=enc.encode(f.name); const data=typeof f.data==='string'?enc.encode(f.data):f.data; const crc=_crc32(data);
+    const lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0));
+    parts.push(Uint8Array.from(lh),name,data);
+    central.push({crc,size:data.length,name,offset});
+    offset+=lh.length+name.length+data.length;
+  }
+  const cdStart=offset; const cd=[];
+  for(const c of central){
+    const r=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(c.crc),u32(c.size),u32(c.size),u16(c.name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(c.offset));
+    cd.push(Uint8Array.from(r),c.name);
+  }
+  const cdSize=cd.reduce((s,a)=>s+a.length,0);
+  const eocd=Uint8Array.from([].concat(u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(cdSize),u32(cdStart),u16(0)));
+  const all=[...parts,...cd,eocd]; const total=all.reduce((s,a)=>s+a.length,0);
+  const out=new Uint8Array(total); let p=0; for(const a of all){out.set(a,p);p+=a.length;} return out;
+}
+
+function buildXlsx(){
+  // styles: fonts / fills / borders / cellXfs
+  const fonts=[
+    '<font><sz val="10"/><name val="Arial"/></font>',
+    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>',
+    '<font><b/><sz val="10"/><name val="Arial"/></font>',
+    '<font><sz val="10"/><color rgb="FF5A6675"/><name val="Arial"/></font>',
+    '<font><sz val="9"/><color rgb="FF16335A"/><name val="Consolas"/></font>',
+    '<font><b/><sz val="12"/><color rgb="FF5B2A86"/><name val="Arial"/></font>',
+    '<font><b/><sz val="9"/><color rgb="FF1F8A8A"/><name val="Arial"/></font>'];
+  const rag=['FFC0392B','FFDB7A2A','FFC99413','FF5FA63D','FF2E7D32'];
+  const fillColors=['FF0B1F3A',...rag,'FF9AA4B2'];
+  const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>']
+    .concat(fillColors.map(c=>`<fill><patternFill patternType="solid"><fgColor rgb="${c}"/></patternFill></fill>`));
+  const borders=[
+    '<border><left/><right/><top/><bottom/><diagonal/></border>',
+    '<border><left/><right/><top/><bottom style="thin"><color rgb="FFE2E6EB"/></bottom><diagonal/></border>',
+    '<border><left/><right/><top/><bottom style="thin"><color rgb="FFFFFFFF"/></bottom><diagonal/></border>'];
+  const xf=(f,fi,b,al)=>{let a='',ap='';if(al){const pr=[];if(al.h)pr.push(`horizontal="${al.h}"`);if(al.v)pr.push(`vertical="${al.v}"`);if(al.wrap)pr.push('wrapText="1"');a=`<alignment ${pr.join(' ')}/>`;ap=' applyAlignment="1"';}return `<xf numFmtId="0" fontId="${f}" fillId="${fi}" borderId="${b}" xfId="0" applyFont="1" applyFill="1" applyBorder="1"${ap}>${a}</xf>`;};
+  // fill index: 0 none,1 gray125,2 navy,3-7 rag,8 grey
+  const xfs=[
+    xf(0,0,0),                                  //0 default
+    xf(1,2,2,{v:'center',wrap:1}),              //1 hdr
+    xf(0,0,1,{v:'top',wrap:1}),                 //2 txt
+    xf(4,0,1,{h:'center',v:'top'}),             //3 ref
+    xf(0,0,1,{h:'center',v:'center',wrap:1}),   //4 lvl
+    xf(2,0,0,{h:'center'}),                     //5 num
+    xf(3,0,0,{h:'center'}),                     //6 cnt
+    xf(5,0,0),                                  //7 secObj
+    xf(6,0,0),                                  //8 secCap
+    xf(2,0,0),                                  //9 lblb
+    xf(1,3,1,{h:'center',v:'center'}),          //10 sc0
+    xf(1,4,1,{h:'center',v:'center'}),          //11 sc1
+    xf(1,5,1,{h:'center',v:'center'}),          //12 sc2
+    xf(1,6,1,{h:'center',v:'center'}),          //13 sc3
+    xf(1,7,1,{h:'center',v:'center'}),          //14 sc4
+    xf(1,3,0,{h:'center'}),                     //15 bd0
+    xf(1,4,0,{h:'center'}),                     //16 bd1
+    xf(1,5,0,{h:'center'}),                     //17 bd2
+    xf(1,6,0,{h:'center'}),                     //18 bd3
+    xf(1,7,0,{h:'center'}),                     //19 bd4
+    xf(1,8,1,{h:'center',v:'center'})];         //20 naf
+  const ST={hdr:1,txt:2,ref:3,lvl:4,num:5,cnt:6,secObj:7,secCap:8,lblb:9,sc0:10,sc1:11,sc2:12,sc3:13,sc4:14,bd0:15,bd1:16,bd2:17,bd3:18,bd4:19,naf:20};
+  const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="${borders.length}">${borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+
+  const colL=n=>{let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;};
+  const S=(style,val)=>({s:ST[style],t:'s',v:val});
+  const N=(style,val)=>({s:ST[style],t:'n',v:val});
+  const E=(style)=>({s:ST[style],t:'e'});
+  function rowXml(ri,cells,ht){
+    let o=`<row r="${ri}"${ht?` ht="${ht}" customHeight="1"`:''}>`;
+    cells.forEach((c,ci)=>{ if(c==null) return; const ref=colL(ci)+ri;
+      if(c.t==='s') o+=`<c r="${ref}" s="${c.s}" t="inlineStr"><is><t xml:space="preserve">${xe(c.v)}</t></is></c>`;
+      else if(c.t==='n') o+=`<c r="${ref}" s="${c.s}"><v>${c.v}</v></c>`;
+      else o+=`<c r="${ref}" s="${c.s}"/>`;
+    }); return o+'</row>';
+  }
+  function sheetXml(colsXml,rowsXml,lastRef,freeze){
+    const views=freeze?`<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>`:'';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastRef}"/>${views}<sheetFormatPr defaultRowHeight="15"/>${colsXml}<sheetData>${rowsXml}</sheetData></worksheet>`;
+  }
+  const cols=(arr)=>`<cols>${arr.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`;
+
+  // ----- Assessment sheet -----
+  let rIdx=1; let aRows=rowXml(rIdx,['Ref','Objective','Principle','Contributing outcome','Question','Score','Maturity level','Evidence and notes'].map(t=>S('hdr',t)),28);
+  tree.forEach(o=>o.principles.forEach(p=>p.outcomes.forEach(c=>{
+    c.questions.forEach((q,qi)=>{
+      rIdx++; const v=state.responses[q.ref]; let scoreCell,lvlCell;
+      if(v==='na'){ scoreCell=S('naf','N/A'); lvlCell=S('lvl','Not applicable'); }
+      else if(typeof v==='number'){ scoreCell=N('sc'+v,v); lvlCell=S('lvl',LEVELS.find(l=>l.score===v).level); }
+      else { scoreCell=E('lvl'); lvlCell=E('lvl'); }
+      const evCell=(qi===0)?S('txt',state.evidence[c.code]||''):E('txt');
+      aRows+=rowXml(rIdx,[S('ref',q.ref),S('txt',o.label),S('txt',p.label),S('txt',c.label),S('txt',q.question),scoreCell,lvlCell,evCell]);
+    });
+  })));
+  const sheet1=sheetXml(cols([8,22,22,24,62,7,17,42]),aRows,'H'+rIdx,true);
+
+  // ----- Summary sheet -----
+  const allScores=Object.values(state.responses).filter(x=>typeof x==='number');
+  const naAll=Object.values(state.responses).filter(x=>x==='na').length;
+  const oavg=avgOf(allScores), oi=bandIndexFor(oavg);
+  let ri=0; let sRows='';
+  const push=(cells,ht)=>{ri++; sRows+=rowXml(ri,cells,ht);};
+  function srow(label,a,ans,na,tot,isRef){const i=bandIndexFor(a);
+    const lbl=isRef?[S('ref',label.slice(0,4)),S('txt',label.slice(5))]:[S('lblb',label),null];
+    const avgC=a==null?E('num'):N('num',round2(a));
+    const bandC=i<0?S('cnt','Not applicable'):S('bd'+i,BAND_NAMES[i]);
+    push([lbl[0],lbl[1],avgC,bandC,S('cnt',ans+'/'+tot),N('cnt',na)]);
+  }
+  push([S('secObj','Overall maturity')],22);
+  push([S('lblb','All in-scope questions'),null,oavg==null?E('num'):N('num',round2(oavg)),oi<0?S('cnt','Not applicable'):S('bd'+oi,BAND_NAMES[oi]),S('cnt',allScores.length+'/'+(DATA.questions.length-naAll)),N('cnt',naAll)]);
+  push([]); push([S('secCap','By objective')],20);
+  push([S('hdr','Objective'),null,S('hdr','Avg'),S('hdr','Maturity band'),S('hdr','In scope'),S('hdr','N/A')]);
+  tree.forEach(o=>{const f=q=>q.ref[0]===o.code;srow(o.label,avgOf(scoresFor(f)),applicableFor(f),naCountFor(f),countFor(f),false);});
+  push([]); push([S('secCap','By principle')],20);
+  push([S('hdr','Principle'),null,S('hdr','Avg'),S('hdr','Maturity band'),S('hdr','In scope'),S('hdr','N/A')]);
+  tree.forEach(o=>o.principles.forEach(p=>{const f=q=>q.ref.slice(0,2)===p.code;srow(p.label,avgOf(scoresFor(f)),applicableFor(f),naCountFor(f),countFor(f),false);}));
+  push([]); push([S('secCap','By contributing outcome')],20);
+  push([S('hdr','Contributing outcome'),null,S('hdr','Avg'),S('hdr','Maturity band'),S('hdr','In scope'),S('hdr','N/A')]);
+  tree.forEach(o=>o.principles.forEach(p=>p.outcomes.forEach(c=>{const f=q=>q.ref.slice(0,4)===c.code;srow(c.label,avgOf(scoresFor(f)),applicableFor(f),naCountFor(f),countFor(f),true);})));
+  const sheet2=sheetXml(cols([8,44,9,20,11,7]),sRows,'F'+ri,false);
+
+  // ----- package -----
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const workbook=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Assessment" sheetId="1" r:id="rId1"/><sheet name="Summary" sheetId="2" r:id="rId2"/></sheets></workbook>`;
+  const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  return _zip([
+    {name:'[Content_Types].xml',data:contentTypes},
+    {name:'_rels/.rels',data:rels},
+    {name:'xl/workbook.xml',data:workbook},
+    {name:'xl/_rels/workbook.xml.rels',data:wbRels},
+    {name:'xl/styles.xml',data:stylesXml},
+    {name:'xl/worksheets/sheet1.xml',data:sheet1},
+    {name:'xl/worksheets/sheet2.xml',data:sheet2}
+  ]);
+}
+
+// ---- load JSON ----
+$('#loadBtn').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const j=JSON.parse(rd.result);
+      const hasAns=Object.keys(state.responses).length||Object.keys(state.evidence).length;
+      if(hasAns && !confirm('Load this file and replace your current answers?')) return;
+      if(j.assessment){
+        state.responses=j.assessment.responses||{};
+        state.evidence=j.assessment.evidence||{};
+        DATA.questions.forEach(q=>{ if(state.responses[q.ref]==null) state.responses[q.ref]=0; });
+        // clear DOM selections first
+        document.querySelectorAll('input[type=radio]:checked').forEach(i=>i.checked=false);
+        document.querySelectorAll('textarea[data-outcome]').forEach(t=>t.value='');
+        document.querySelectorAll('.q.answered').forEach(q=>q.classList.remove('answered','a0','a1','a2','a3','a4'));
+        hydrate();
+        toast('Loaded saved assessment ('+Object.keys(state.responses).length+' answers)');
+      } else if(j.questions){
+        toast('That looks like a blank question set \u2014 no saved answers to load');
+      } else { toast('Unrecognised file \u2014 expected a CAF assessment JSON'); }
+    }catch(err){ toast('Could not read that file: '+err.message); }
+    e.target.value='';
+  };
+  rd.readAsText(f);
+};
+
+// ---- reset ----
+function clearDom(){
+  document.querySelectorAll('input[type=radio]:checked').forEach(i=>i.checked=false);
+  document.querySelectorAll('textarea[data-outcome]').forEach(t=>t.value='');
+  document.querySelectorAll('.q.answered').forEach(q=>q.classList.remove('answered','a0','a1','a2','a3','a4'));
+}
+$('#resetBtn').onclick=()=>{
+  const has=Object.values(state.responses).some(v=>v>0)||Object.values(state.evidence).some(v=>v);
+  if(!has){ toast('Already at the Not Achieved baseline'); return; }
+  if(!confirm('Reset the whole assessment back to Not Achieved? This clears all evidence and any scores you have raised. Export first if you want to keep it.')) return;
+  clearDom();
+  initDefaults();
+  hydrate();
+  if(current==='summary') refreshSummary();
+  toast('Reset to Not Achieved');
+};
+
+// ---- init ----
+initDefaults();
+renderRail();
+const fromHash=location.hash.replace('#','');
+const valid = fromHash && (fromHash==='summary'||fromHash==='guidance'||fromHash.startsWith('obj-'));
+show(valid ? fromHash : 'guidance');
+hydrate();
+</script>
+</body>
+</html>
